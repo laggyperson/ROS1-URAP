@@ -170,62 +170,68 @@ class SimulationSynchronization(object):
         self.sumo_ego = [] # List of ID's for ego sumo actor
         self.carla_ego = [] # same as above
 
+        self.tick_count = 0 # To keep track of when to update Carla with Sumo data
+
     def tick(self):
         """
         Tick to simulation synchronization
+        Going to change the frequency of ticks for performance
         """
         # -----------------
         # sumo-->carla sync
         # -----------------
         self.sumo.tick()
 
-        # Spawning new sumo actors in carla (i.e, not controlled by carla).
-        sumo_spawned_actors = self.sumo.spawned_actors - set(self.carla2sumo_ids.values()) - set(self.sumo_ego)
-        for sumo_actor_id in sumo_spawned_actors:
-            self.sumo.subscribe(sumo_actor_id)
-            sumo_actor = self.sumo.get_actor(sumo_actor_id)
+        if self.tick_count == 0:
+            # Spawning new sumo actors in carla (i.e, not controlled by carla).
+            sumo_spawned_actors = self.sumo.spawned_actors - set(self.carla2sumo_ids.values()) - set(self.sumo_ego)
+            for sumo_actor_id in sumo_spawned_actors:
+                self.sumo.subscribe(sumo_actor_id)
+                sumo_actor = self.sumo.get_actor(sumo_actor_id)
 
-            carla_blueprint = BridgeHelper.get_carla_blueprint(sumo_actor, self.sync_vehicle_color)
-            if carla_blueprint is not None:
+                carla_blueprint = BridgeHelper.get_carla_blueprint(sumo_actor, self.sync_vehicle_color)
+                if carla_blueprint is not None:
+                    carla_transform = BridgeHelper.get_carla_transform(sumo_actor.transform,
+                                                                       sumo_actor.extent)
+
+                    carla_actor_id = self.carla.spawn_actor(carla_blueprint, carla_transform)
+                    if carla_actor_id != INVALID_ACTOR_ID:
+                        self.sumo2carla_ids[sumo_actor_id] = carla_actor_id
+                else:
+                    self.sumo.unsubscribe(sumo_actor_id)
+
+            # Destroying sumo arrived actors in carla.
+            for sumo_actor_id in self.sumo.destroyed_actors:
+                if sumo_actor_id in self.sumo2carla_ids:
+                    self.carla.destroy_actor(self.sumo2carla_ids.pop(sumo_actor_id))
+
+            # Updating sumo actors in carla.
+            for sumo_actor_id in self.sumo2carla_ids:
+                carla_actor_id = self.sumo2carla_ids[sumo_actor_id]
+
+                sumo_actor = self.sumo.get_actor(sumo_actor_id)
+                carla_actor = self.carla.get_actor(carla_actor_id)
+
                 carla_transform = BridgeHelper.get_carla_transform(sumo_actor.transform,
                                                                    sumo_actor.extent)
+                if self.sync_vehicle_lights:
+                    carla_lights = BridgeHelper.get_carla_lights_state(carla_actor.get_light_state(),
+                                                                       sumo_actor.signals)
+                else:
+                    carla_lights = None
 
-                carla_actor_id = self.carla.spawn_actor(carla_blueprint, carla_transform)
-                if carla_actor_id != INVALID_ACTOR_ID:
-                    self.sumo2carla_ids[sumo_actor_id] = carla_actor_id
-            else:
-                self.sumo.unsubscribe(sumo_actor_id)
+                self.carla.synchronize_vehicle(carla_actor_id, carla_transform, carla_lights)
 
-        # Destroying sumo arrived actors in carla.
-        for sumo_actor_id in self.sumo.destroyed_actors:
-            if sumo_actor_id in self.sumo2carla_ids:
-                self.carla.destroy_actor(self.sumo2carla_ids.pop(sumo_actor_id))
+                # ================================================ ROS ================================================
+                # Adds Sumo actor state to ego vehicle's curr_sim array
+                # ================================================ ROS ================================================
+                if self.ego_vehicle.ego_check > 1:
+                    self.ego_vehicle.add_state(carla_actor, 1)
+                # ============================================== End ROS ==============================================
 
-        # Updating sumo actors in carla.
-        for sumo_actor_id in self.sumo2carla_ids:
-            carla_actor_id = self.sumo2carla_ids[sumo_actor_id]
+        self.tick_count = (self.tick_count + 1) % 10 # Every 10 ticks we will sync the Sumo cars with the Carla world
 
-            sumo_actor = self.sumo.get_actor(sumo_actor_id)
-            carla_actor = self.carla.get_actor(carla_actor_id)
-
-            carla_transform = BridgeHelper.get_carla_transform(sumo_actor.transform,
-                                                               sumo_actor.extent)
-            if self.sync_vehicle_lights:
-                carla_lights = BridgeHelper.get_carla_lights_state(carla_actor.get_light_state(),
-                                                                   sumo_actor.signals)
-            else:
-                carla_lights = None
-
-            self.carla.synchronize_vehicle(carla_actor_id, carla_transform, carla_lights)
-
-            # ================================================ ROS ================================================
-            # Adds Sumo actor state to ego vehicle's curr_sim array
-            # ================================================ ROS ================================================
-            if self.ego_vehicle.ego_check > 1:
-                self.ego_vehicle.add_state(carla_actor, 1)
-            # ============================================== End ROS ==============================================
-
-        # Updates traffic lights in carla based on sumo information.
+        # Updates traffic lights in carla based on sumo information. Will do every tick
         if self.tls_manager == 'sumo':
             common_landmarks = self.sumo.traffic_light_ids & self.carla.traffic_light_ids
             for landmark_id in common_landmarks:
@@ -322,14 +328,14 @@ class SimulationSynchronization(object):
 
             self.sumo.synchronize_vehicle(self.ego_vehicle.sumo_actor, sumo_transform, sumo_lights)
 
-        """# Temporary npc for Ego Vehicle
-        if self.ego_vehicle.ego_check == 3:
-            ego_transform = self.ego_vehicle.carla_actor.get_transform()
+        # # Temporary npc for Ego Vehicle
+        # if self.ego_vehicle.ego_check == 3:
+        #     ego_transform = self.ego_vehicle.carla_actor.get_transform()
 
-            sumo_transform = BridgeHelper.get_sumo_transform(ego_transform, self.ego_vehicle.carla_actor.bounding_box.extent)
-            sumo_lights = None # Not syncing lights for now
+        #     sumo_transform = BridgeHelper.get_sumo_transform(ego_transform, self.ego_vehicle.carla_actor.bounding_box.extent)
+        #     sumo_lights = None # Not syncing lights for now
 
-            self.sumo.synchronize_vehicle(self.ego_vehicle.sumo_actor, sumo_transform, sumo_lights)"""
+        #     self.sumo.synchronize_vehicle(self.ego_vehicle.sumo_actor, sumo_transform, sumo_lights)
 
         # Publishing
         self.ego_vehicle.publish()
