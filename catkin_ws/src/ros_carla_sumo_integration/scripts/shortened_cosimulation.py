@@ -358,10 +358,6 @@ class SimulationSynchronization(object):
         if self.ego_vehicle.carla_actor is not None:
             self.carla.destroy_actor(self.ego_vehicle.carla_actor.id)
             print("Destroyed Ego Actors in Carla")
-
-        if self.ego_vehicle.sumo_actor is not None:
-            self.sumo.destroy_actor(self.ego_vehicle.sumo_actor)
-            print("Destroyed Ego Actors in Sumo")
         # ============================================== End ROS ==============================================
 
         # Destroying synchronized actors.
@@ -370,6 +366,10 @@ class SimulationSynchronization(object):
 
         for sumo_actor_id in self.carla2sumo_ids.values():
             self.sumo.destroy_actor(sumo_actor_id)
+        
+        if self.ego_vehicle.sumo_actor is not None:
+            self.sumo.destroy_actor(self.ego_vehicle.sumo_actor)
+            print("Destroyed Ego Actors in Sumo")
 
         # Closing sumo and carla client.
         self.carla.close()
