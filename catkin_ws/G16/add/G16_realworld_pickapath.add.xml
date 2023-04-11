@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- generated on 2022-10-24 00:49:56 by Eclipse SUMO netedit Version 1.14.1
+-->
+
+<additional xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/additional_file.xsd">
+    <!-- Routes (used in RouteProbReroutes and calibratorFlows) -->
+    <route id="bigger_loop" edges="6 5 4 22 21 14" color="orange"/>
+    <route id="small_loop" edges="4 22 25 5"/>
+    <!-- Other additionals -->
+    <rerouter id="rr_0" edges="5" pos="290.06,396.60">
+        <interval begin="0.00" end="3600.00">
+            <destProbReroute id="4" probability="1.00"/>
+        </interval>
+    </rerouter>
+    <rerouter id="rr_1" edges="4" pos="223.29,433.56">
+        <interval begin="0.00" end="3600.00">
+            <destProbReroute id="5" probability="1.00"/>
+        </interval>
+    </rerouter>
+    <rerouter id="rr_2" edges="14" pos="581.41,244.95">
+        <interval begin="0.00" end="3600.00">
+            <destProbReroute id="6" probability="1.00"/>
+        </interval>
+    </rerouter>
+    <rerouter id="rr_3" edges="6" pos="413.53,330.69">
+        <interval begin="0.00" end="3600.00">
+            <destProbReroute id="14" probability="1.00"/>
+        </interval>
+    </rerouter>
+    <rerouter id="rr_4" edges="22" pos="431.96,432.62">
+        <interval begin="0.00" end="3600.00">
+            <routeProbReroute id="small_loop" probability="0.50"/>
+            <routeProbReroute id="bigger_loop" probability="0.50"/>
+        </interval>
+    </rerouter>
+    <rerouter id="rr_5" edges="-11" pos="271.69,376.35">
+        <interval begin="0.00" end="3600.00">
+            <destProbReroute id="16" probability="1.00"/>
+        </interval>
+    </rerouter>
+    <rerouter id="rr_6" edges="16" pos="225.82,263.79">
+        <interval begin="0.00" end="3600.00">
+            <destProbReroute id="-11" probability="1.00"/>
+        </interval>
+    </rerouter>
+    <variableSpeedSign id="vs_0" lanes="16_1 16_2" pos="296.54,219.15" vTypes="DEFAULT_VEHTYPE">
+        <step time="0.00" speed="1"/>
+        <step time="60.00" speed="10"/>
+        <step time="120.00" speed="30"/>
+    </variableSpeedSign>
+</additional>

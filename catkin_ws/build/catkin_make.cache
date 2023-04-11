@@ -1,0 +1,2 @@
+ros_carla_sumo_integration
+-DCATKIN_DEVEL_PREFIX=/home/arpae/Documents/ROS1-URAP/catkin_ws/devel -DCMAKE_INSTALL_PREFIX=/home/arpae/Documents/ROS1-URAP/catkin_ws/install -G Unix Makefiles

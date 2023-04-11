@@ -1,0 +1,332 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- generated on 2022-11-07 01:23:45 by Eclipse SUMO netedit Version 1.14.1
+-->
+
+<additional xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/additional_file.xsd">
+    <!-- Routes (used in RouteProbReroutes and calibratorFlows) -->
+    <route id="r_0" edges="-24"/>
+    <route id="r_1" edges="-11"/>
+    <route id="r_2" edges="-0"/>
+    <route id="r_3" edges="3"/>
+    <route id="r_4" edges="4"/>
+    <route id="r_5" edges="5"/>
+    <route id="r_6" edges="6"/>
+    <route id="r_7" edges="12"/>
+    <route id="r_8" edges="13"/>
+    <route id="r_9" edges="14"/>
+    <route id="r_10" edges="15"/>
+    <route id="r_11" edges="16"/>
+    <route id="r_12" edges="21"/>
+    <route id="r_13" edges="22"/>
+    <route id="r_14" edges="25"/>
+    <!-- Calibrators -->
+    <calibrator id="ca_0" edge="-24" pos="0.00">
+        <flow type="DEFAULT_VEHTYPE" begin="0" end="10" route="r_0" vehsPerHour="1005"/>
+	<flow type="DEFAULT_VEHTYPE" begin="10" end="20" route="r_0" vehsPerHour="1461"/>
+	<flow type="DEFAULT_VEHTYPE" begin="20" end="30" route="r_0" vehsPerHour="2184"/>
+	<flow type="DEFAULT_VEHTYPE" begin="30" end="40" route="r_0" vehsPerHour="836"/>
+	<flow type="DEFAULT_VEHTYPE" begin="40" end="50" route="r_0" vehsPerHour="1658"/>
+	<flow type="DEFAULT_VEHTYPE" begin="50" end="60" route="r_0" vehsPerHour="751"/>
+	<flow type="DEFAULT_VEHTYPE" begin="60" end="70" route="r_0" vehsPerHour="1773"/>
+	<flow type="DEFAULT_VEHTYPE" begin="70" end="80" route="r_0" vehsPerHour="1307"/>
+	<flow type="DEFAULT_VEHTYPE" begin="80" end="90" route="r_0" vehsPerHour="1252"/>
+	<flow type="DEFAULT_VEHTYPE" begin="90" end="100" route="r_0" vehsPerHour="1827"/>
+	<flow type="DEFAULT_VEHTYPE" begin="100" end="110" route="r_0" vehsPerHour="2121"/>
+	<flow type="DEFAULT_VEHTYPE" begin="110" end="120" route="r_0" vehsPerHour="1798"/>
+	<flow type="DEFAULT_VEHTYPE" begin="120" end="130" route="r_0" vehsPerHour="977"/>
+    </calibrator>
+    <calibrator id="ca_1" edge="-11" pos="0.00">
+	<flow type="DEFAULT_VEHTYPE" begin="0" end="10" route="r_1" vehsPerHour="1707"/>
+	<flow type="DEFAULT_VEHTYPE" begin="10" end="20" route="r_1" vehsPerHour="1750"/>
+	<flow type="DEFAULT_VEHTYPE" begin="20" end="30" route="r_1" vehsPerHour="989"/>
+	<flow type="DEFAULT_VEHTYPE" begin="30" end="40" route="r_1" vehsPerHour="2075"/>
+	<flow type="DEFAULT_VEHTYPE" begin="40" end="50" route="r_1" vehsPerHour="2463"/>
+	<flow type="DEFAULT_VEHTYPE" begin="50" end="60" route="r_1" vehsPerHour="1043"/>
+	<flow type="DEFAULT_VEHTYPE" begin="60" end="70" route="r_1" vehsPerHour="1052"/>
+	<flow type="DEFAULT_VEHTYPE" begin="70" end="80" route="r_1" vehsPerHour="1739"/>
+	<flow type="DEFAULT_VEHTYPE" begin="80" end="90" route="r_1" vehsPerHour="1083"/>
+	<flow type="DEFAULT_VEHTYPE" begin="90" end="100" route="r_1" vehsPerHour="502"/>
+	<flow type="DEFAULT_VEHTYPE" begin="100" end="110" route="r_1" vehsPerHour="1253"/>
+	<flow type="DEFAULT_VEHTYPE" begin="110" end="120" route="r_1" vehsPerHour="1100"/>
+	<flow type="DEFAULT_VEHTYPE" begin="120" end="130" route="r_1" vehsPerHour="810"/>
+    </calibrator>		
+    <calibrator id="ca_2" edge="-0" pos="0.00">
+	<flow type="DEFAULT_VEHTYPE" begin="0" end="10" route="r_2" vehsPerHour="1305"/>
+	<flow type="DEFAULT_VEHTYPE" begin="10" end="20" route="r_2" vehsPerHour="750"/>
+	<flow type="DEFAULT_VEHTYPE" begin="20" end="30" route="r_2" vehsPerHour="2473"/>
+	<flow type="DEFAULT_VEHTYPE" begin="30" end="40" route="r_2" vehsPerHour="1529"/>
+	<flow type="DEFAULT_VEHTYPE" begin="40" end="50" route="r_2" vehsPerHour="2325"/>
+	<flow type="DEFAULT_VEHTYPE" begin="50" end="60" route="r_2" vehsPerHour="2444"/>
+	<flow type="DEFAULT_VEHTYPE" begin="60" end="70" route="r_2" vehsPerHour="801"/>
+	<flow type="DEFAULT_VEHTYPE" begin="70" end="80" route="r_2" vehsPerHour="1764"/>
+	<flow type="DEFAULT_VEHTYPE" begin="80" end="90" route="r_2" vehsPerHour="2440"/>
+	<flow type="DEFAULT_VEHTYPE" begin="90" end="100" route="r_2" vehsPerHour="1987"/>
+	<flow type="DEFAULT_VEHTYPE" begin="100" end="110" route="r_2" vehsPerHour="2241"/>
+	<flow type="DEFAULT_VEHTYPE" begin="110" end="120" route="r_2" vehsPerHour="634"/>
+	<flow type="DEFAULT_VEHTYPE" begin="120" end="130" route="r_2" vehsPerHour="1097"/>
+    </calibrator>		
+    <calibrator id="ca_3" edge="3" pos="0.00">	
+	<flow type="DEFAULT_VEHTYPE" begin="0" end="10" route="r_3" vehsPerHour="1780"/>
+	<flow type="DEFAULT_VEHTYPE" begin="10" end="20" route="r_3" vehsPerHour="1080"/>
+	<flow type="DEFAULT_VEHTYPE" begin="20" end="30" route="r_3" vehsPerHour="534"/>
+	<flow type="DEFAULT_VEHTYPE" begin="30" end="40" route="r_3" vehsPerHour="1261"/>
+	<flow type="DEFAULT_VEHTYPE" begin="40" end="50" route="r_3" vehsPerHour="688"/>
+	<flow type="DEFAULT_VEHTYPE" begin="50" end="60" route="r_3" vehsPerHour="2275"/>
+	<flow type="DEFAULT_VEHTYPE" begin="60" end="70" route="r_3" vehsPerHour="2477"/>
+	<flow type="DEFAULT_VEHTYPE" begin="70" end="80" route="r_3" vehsPerHour="1645"/>
+	<flow type="DEFAULT_VEHTYPE" begin="80" end="90" route="r_3" vehsPerHour="2488"/>
+	<flow type="DEFAULT_VEHTYPE" begin="90" end="100" route="r_3" vehsPerHour="2032"/>
+	<flow type="DEFAULT_VEHTYPE" begin="100" end="110" route="r_3" vehsPerHour="1892"/>
+	<flow type="DEFAULT_VEHTYPE" begin="110" end="120" route="r_3" vehsPerHour="2097"/>
+	<flow type="DEFAULT_VEHTYPE" begin="120" end="130" route="r_3" vehsPerHour="933"/>
+    </calibrator>	
+    <calibrator id="ca_4" edge="4" pos="0.00">	
+	<flow type="DEFAULT_VEHTYPE" begin="0" end="10" route="r_4" vehsPerHour="1345"/>
+	<flow type="DEFAULT_VEHTYPE" begin="10" end="20" route="r_4" vehsPerHour="1672"/>
+	<flow type="DEFAULT_VEHTYPE" begin="20" end="30" route="r_4" vehsPerHour="1373"/>
+	<flow type="DEFAULT_VEHTYPE" begin="30" end="40" route="r_4" vehsPerHour="522"/>
+	<flow type="DEFAULT_VEHTYPE" begin="40" end="50" route="r_4" vehsPerHour="1362"/>
+	<flow type="DEFAULT_VEHTYPE" begin="50" end="60" route="r_4" vehsPerHour="1226"/>
+	<flow type="DEFAULT_VEHTYPE" begin="60" end="70" route="r_4" vehsPerHour="1434"/>
+	<flow type="DEFAULT_VEHTYPE" begin="70" end="80" route="r_4" vehsPerHour="2422"/>
+	<flow type="DEFAULT_VEHTYPE" begin="80" end="90" route="r_4" vehsPerHour="2081"/>
+	<flow type="DEFAULT_VEHTYPE" begin="90" end="100" route="r_4" vehsPerHour="1879"/>
+	<flow type="DEFAULT_VEHTYPE" begin="100" end="110" route="r_4" vehsPerHour="671"/>
+	<flow type="DEFAULT_VEHTYPE" begin="110" end="120" route="r_4" vehsPerHour="1301"/>
+	<flow type="DEFAULT_VEHTYPE" begin="120" end="130" route="r_4" vehsPerHour="1437"/>
+    </calibrator>	
+    <calibrator id="ca_5" edge="5" pos="0.00">	
+	<flow type="DEFAULT_VEHTYPE" begin="0" end="10" route="r_5" vehsPerHour="1543"/>
+	<flow type="DEFAULT_VEHTYPE" begin="10" end="20" route="r_5" vehsPerHour="2307"/>
+	<flow type="DEFAULT_VEHTYPE" begin="20" end="30" route="r_5" vehsPerHour="1150"/>
+	<flow type="DEFAULT_VEHTYPE" begin="30" end="40" route="r_5" vehsPerHour="1614"/>
+	<flow type="DEFAULT_VEHTYPE" begin="40" end="50" route="r_5" vehsPerHour="1892"/>
+	<flow type="DEFAULT_VEHTYPE" begin="50" end="60" route="r_5" vehsPerHour="724"/>
+	<flow type="DEFAULT_VEHTYPE" begin="60" end="70" route="r_5" vehsPerHour="1844"/>
+	<flow type="DEFAULT_VEHTYPE" begin="70" end="80" route="r_5" vehsPerHour="1122"/>
+	<flow type="DEFAULT_VEHTYPE" begin="80" end="90" route="r_5" vehsPerHour="1949"/>
+	<flow type="DEFAULT_VEHTYPE" begin="90" end="100" route="r_5" vehsPerHour="2481"/>
+	<flow type="DEFAULT_VEHTYPE" begin="100" end="110" route="r_5" vehsPerHour="779"/>
+	<flow type="DEFAULT_VEHTYPE" begin="110" end="120" route="r_5" vehsPerHour="2007"/>
+	<flow type="DEFAULT_VEHTYPE" begin="120" end="130" route="r_5" vehsPerHour="824"/>
+    </calibrator>	
+    <calibrator id="ca_6" edge="6" pos="0.00">	
+	<flow type="DEFAULT_VEHTYPE" begin="0" end="10" route="r_6" vehsPerHour="1913"/>
+	<flow type="DEFAULT_VEHTYPE" begin="10" end="20" route="r_6" vehsPerHour="1227"/>
+	<flow type="DEFAULT_VEHTYPE" begin="20" end="30" route="r_6" vehsPerHour="2414"/>
+	<flow type="DEFAULT_VEHTYPE" begin="30" end="40" route="r_6" vehsPerHour="749"/>
+	<flow type="DEFAULT_VEHTYPE" begin="40" end="50" route="r_6" vehsPerHour="2203"/>
+	<flow type="DEFAULT_VEHTYPE" begin="50" end="60" route="r_6" vehsPerHour="899"/>
+	<flow type="DEFAULT_VEHTYPE" begin="60" end="70" route="r_6" vehsPerHour="720"/>
+	<flow type="DEFAULT_VEHTYPE" begin="70" end="80" route="r_6" vehsPerHour="1883"/>
+	<flow type="DEFAULT_VEHTYPE" begin="80" end="90" route="r_6" vehsPerHour="2473"/>
+	<flow type="DEFAULT_VEHTYPE" begin="90" end="100" route="r_6" vehsPerHour="1122"/>
+	<flow type="DEFAULT_VEHTYPE" begin="100" end="110" route="r_6" vehsPerHour="1681"/>
+	<flow type="DEFAULT_VEHTYPE" begin="110" end="120" route="r_6" vehsPerHour="2125"/>
+	<flow type="DEFAULT_VEHTYPE" begin="120" end="130" route="r_6" vehsPerHour="1510"/>
+    </calibrator>	
+    <calibrator id="ca_7" edge="12" pos="0.00">	
+	<flow type="DEFAULT_VEHTYPE" begin="0" end="10" route="r_7" vehsPerHour="773"/>
+	<flow type="DEFAULT_VEHTYPE" begin="10" end="20" route="r_7" vehsPerHour="2249"/>
+	<flow type="DEFAULT_VEHTYPE" begin="20" end="30" route="r_7" vehsPerHour="520"/>
+	<flow type="DEFAULT_VEHTYPE" begin="30" end="40" route="r_7" vehsPerHour="1518"/>
+	<flow type="DEFAULT_VEHTYPE" begin="40" end="50" route="r_7" vehsPerHour="926"/>
+	<flow type="DEFAULT_VEHTYPE" begin="50" end="60" route="r_7" vehsPerHour="2355"/>
+	<flow type="DEFAULT_VEHTYPE" begin="60" end="70" route="r_7" vehsPerHour="1598"/>
+	<flow type="DEFAULT_VEHTYPE" begin="70" end="80" route="r_7" vehsPerHour="1509"/>
+	<flow type="DEFAULT_VEHTYPE" begin="80" end="90" route="r_7" vehsPerHour="1518"/>
+	<flow type="DEFAULT_VEHTYPE" begin="90" end="100" route="r_7" vehsPerHour="500"/>
+	<flow type="DEFAULT_VEHTYPE" begin="100" end="110" route="r_7" vehsPerHour="2449"/>
+	<flow type="DEFAULT_VEHTYPE" begin="110" end="120" route="r_7" vehsPerHour="1364"/>
+	<flow type="DEFAULT_VEHTYPE" begin="120" end="130" route="r_7" vehsPerHour="653"/>
+    </calibrator>	
+    <calibrator id="ca_8" edge="13" pos="0.00">	
+	<flow type="DEFAULT_VEHTYPE" begin="0" end="10" route="r_8" vehsPerHour="2224"/>
+	<flow type="DEFAULT_VEHTYPE" begin="10" end="20" route="r_8" vehsPerHour="2235"/>
+	<flow type="DEFAULT_VEHTYPE" begin="20" end="30" route="r_8" vehsPerHour="1307"/>
+	<flow type="DEFAULT_VEHTYPE" begin="30" end="40" route="r_8" vehsPerHour="2252"/>
+	<flow type="DEFAULT_VEHTYPE" begin="40" end="50" route="r_8" vehsPerHour="2062"/>
+	<flow type="DEFAULT_VEHTYPE" begin="50" end="60" route="r_8" vehsPerHour="1008"/>
+	<flow type="DEFAULT_VEHTYPE" begin="60" end="70" route="r_8" vehsPerHour="1403"/>
+	<flow type="DEFAULT_VEHTYPE" begin="70" end="80" route="r_8" vehsPerHour="1606"/>
+	<flow type="DEFAULT_VEHTYPE" begin="80" end="90" route="r_8" vehsPerHour="674"/>
+	<flow type="DEFAULT_VEHTYPE" begin="90" end="100" route="r_8" vehsPerHour="1189"/>
+	<flow type="DEFAULT_VEHTYPE" begin="100" end="110" route="r_8" vehsPerHour="2478"/>
+	<flow type="DEFAULT_VEHTYPE" begin="110" end="120" route="r_8" vehsPerHour="2232"/>
+	<flow type="DEFAULT_VEHTYPE" begin="120" end="130" route="r_8" vehsPerHour="2152"/>
+    </calibrator>	
+    <calibrator id="ca_9" edge="14" pos="0.00">	
+	<flow type="DEFAULT_VEHTYPE" begin="0" end="10" route="r_9" vehsPerHour="1156"/>
+	<flow type="DEFAULT_VEHTYPE" begin="10" end="20" route="r_9" vehsPerHour="1611"/>
+	<flow type="DEFAULT_VEHTYPE" begin="20" end="30" route="r_9" vehsPerHour="2067"/>
+	<flow type="DEFAULT_VEHTYPE" begin="30" end="40" route="r_9" vehsPerHour="1823"/>
+	<flow type="DEFAULT_VEHTYPE" begin="40" end="50" route="r_9" vehsPerHour="2348"/>
+	<flow type="DEFAULT_VEHTYPE" begin="50" end="60" route="r_9" vehsPerHour="1854"/>
+	<flow type="DEFAULT_VEHTYPE" begin="60" end="70" route="r_9" vehsPerHour="891"/>
+	<flow type="DEFAULT_VEHTYPE" begin="70" end="80" route="r_9" vehsPerHour="743"/>
+	<flow type="DEFAULT_VEHTYPE" begin="80" end="90" route="r_9" vehsPerHour="832"/>
+	<flow type="DEFAULT_VEHTYPE" begin="90" end="100" route="r_9" vehsPerHour="1940"/>
+	<flow type="DEFAULT_VEHTYPE" begin="100" end="110" route="r_9" vehsPerHour="773"/>
+	<flow type="DEFAULT_VEHTYPE" begin="110" end="120" route="r_9" vehsPerHour="2008"/>
+	<flow type="DEFAULT_VEHTYPE" begin="120" end="130" route="r_9" vehsPerHour="670"/>
+    </calibrator>	
+    <calibrator id="ca_10" edge="15" pos="0.00">	
+	<flow type="DEFAULT_VEHTYPE" begin="0" end="10" route="r_10" vehsPerHour="799"/>
+	<flow type="DEFAULT_VEHTYPE" begin="10" end="20" route="r_10" vehsPerHour="1150"/>
+	<flow type="DEFAULT_VEHTYPE" begin="20" end="30" route="r_10" vehsPerHour="1747"/>
+	<flow type="DEFAULT_VEHTYPE" begin="30" end="40" route="r_10" vehsPerHour="1228"/>
+	<flow type="DEFAULT_VEHTYPE" begin="40" end="50" route="r_10" vehsPerHour="992"/>
+	<flow type="DEFAULT_VEHTYPE" begin="50" end="60" route="r_10" vehsPerHour="1663"/>
+	<flow type="DEFAULT_VEHTYPE" begin="60" end="70" route="r_10" vehsPerHour="1695"/>
+	<flow type="DEFAULT_VEHTYPE" begin="70" end="80" route="r_10" vehsPerHour="1764"/>
+	<flow type="DEFAULT_VEHTYPE" begin="80" end="90" route="r_10" vehsPerHour="539"/>
+	<flow type="DEFAULT_VEHTYPE" begin="90" end="100" route="r_10" vehsPerHour="1069"/>
+	<flow type="DEFAULT_VEHTYPE" begin="100" end="110" route="r_10" vehsPerHour="1412"/>
+	<flow type="DEFAULT_VEHTYPE" begin="110" end="120" route="r_10" vehsPerHour="920"/>
+	<flow type="DEFAULT_VEHTYPE" begin="120" end="130" route="r_10" vehsPerHour="961"/>
+    </calibrator>	
+    <calibrator id="ca_11" edge="16" pos="0.00">
+	<flow type="DEFAULT_VEHTYPE" begin="0" end="10" route="r_11" vehsPerHour="1440"/>
+	<flow type="DEFAULT_VEHTYPE" begin="10" end="20" route="r_11" vehsPerHour="1186"/>
+	<flow type="DEFAULT_VEHTYPE" begin="20" end="30" route="r_11" vehsPerHour="2306"/>
+	<flow type="DEFAULT_VEHTYPE" begin="30" end="40" route="r_11" vehsPerHour="2355"/>
+	<flow type="DEFAULT_VEHTYPE" begin="40" end="50" route="r_11" vehsPerHour="583"/>
+	<flow type="DEFAULT_VEHTYPE" begin="50" end="60" route="r_11" vehsPerHour="582"/>
+	<flow type="DEFAULT_VEHTYPE" begin="60" end="70" route="r_11" vehsPerHour="1828"/>
+	<flow type="DEFAULT_VEHTYPE" begin="70" end="80" route="r_11" vehsPerHour="528"/>
+	<flow type="DEFAULT_VEHTYPE" begin="80" end="90" route="r_11" vehsPerHour="1341"/>
+	<flow type="DEFAULT_VEHTYPE" begin="90" end="100" route="r_11" vehsPerHour="953"/>
+	<flow type="DEFAULT_VEHTYPE" begin="100" end="110" route="r_11" vehsPerHour="2055"/>
+	<flow type="DEFAULT_VEHTYPE" begin="110" end="120" route="r_11" vehsPerHour="2063"/>
+	<flow type="DEFAULT_VEHTYPE" begin="120" end="130" route="r_11" vehsPerHour="908"/>
+    </calibrator>		
+    <calibrator id="ca_12" edge="21" pos="0.00">
+	<flow type="DEFAULT_VEHTYPE" begin="0" end="10" route="r_12" vehsPerHour="687"/>
+	<flow type="DEFAULT_VEHTYPE" begin="10" end="20" route="r_12" vehsPerHour="1185"/>
+	<flow type="DEFAULT_VEHTYPE" begin="20" end="30" route="r_12" vehsPerHour="1882"/>
+	<flow type="DEFAULT_VEHTYPE" begin="30" end="40" route="r_12" vehsPerHour="2477"/>
+	<flow type="DEFAULT_VEHTYPE" begin="40" end="50" route="r_12" vehsPerHour="2342"/>
+	<flow type="DEFAULT_VEHTYPE" begin="50" end="60" route="r_12" vehsPerHour="2222"/>
+	<flow type="DEFAULT_VEHTYPE" begin="60" end="70" route="r_12" vehsPerHour="1075"/>
+	<flow type="DEFAULT_VEHTYPE" begin="70" end="80" route="r_12" vehsPerHour="1572"/>
+	<flow type="DEFAULT_VEHTYPE" begin="80" end="90" route="r_12" vehsPerHour="1783"/>
+	<flow type="DEFAULT_VEHTYPE" begin="90" end="100" route="r_12" vehsPerHour="2000"/>
+	<flow type="DEFAULT_VEHTYPE" begin="100" end="110" route="r_12" vehsPerHour="2357"/>
+	<flow type="DEFAULT_VEHTYPE" begin="110" end="120" route="r_12" vehsPerHour="716"/>
+	<flow type="DEFAULT_VEHTYPE" begin="120" end="130" route="r_12" vehsPerHour="2022"/>
+    </calibrator>		
+    <calibrator id="ca_13" edge="22" pos="0.00">
+	<flow type="DEFAULT_VEHTYPE" begin="0" end="10" route="r_13" vehsPerHour="1845"/>
+	<flow type="DEFAULT_VEHTYPE" begin="10" end="20" route="r_13" vehsPerHour="1702"/>
+	<flow type="DEFAULT_VEHTYPE" begin="20" end="30" route="r_13" vehsPerHour="2393"/>
+	<flow type="DEFAULT_VEHTYPE" begin="30" end="40" route="r_13" vehsPerHour="2025"/>
+	<flow type="DEFAULT_VEHTYPE" begin="40" end="50" route="r_13" vehsPerHour="1389"/>
+	<flow type="DEFAULT_VEHTYPE" begin="50" end="60" route="r_13" vehsPerHour="1389"/>
+	<flow type="DEFAULT_VEHTYPE" begin="60" end="70" route="r_13" vehsPerHour="1574"/>
+	<flow type="DEFAULT_VEHTYPE" begin="70" end="80" route="r_13" vehsPerHour="1564"/>
+	<flow type="DEFAULT_VEHTYPE" begin="80" end="90" route="r_13" vehsPerHour="844"/>
+	<flow type="DEFAULT_VEHTYPE" begin="90" end="100" route="r_13" vehsPerHour="1055"/>
+	<flow type="DEFAULT_VEHTYPE" begin="100" end="110" route="r_13" vehsPerHour="2402"/>
+	<flow type="DEFAULT_VEHTYPE" begin="110" end="120" route="r_13" vehsPerHour="2308"/>
+	<flow type="DEFAULT_VEHTYPE" begin="120" end="130" route="r_13" vehsPerHour="1344"/>
+    </calibrator>		
+    <calibrator id="ca_14" edge="25" pos="0.00">
+	<flow type="DEFAULT_VEHTYPE" begin="0" end="10" route="r_14" vehsPerHour="1290"/>
+	<flow type="DEFAULT_VEHTYPE" begin="10" end="20" route="r_14" vehsPerHour="581"/>
+	<flow type="DEFAULT_VEHTYPE" begin="20" end="30" route="r_14" vehsPerHour="502"/>
+	<flow type="DEFAULT_VEHTYPE" begin="30" end="40" route="r_14" vehsPerHour="1706"/>
+	<flow type="DEFAULT_VEHTYPE" begin="40" end="50" route="r_14" vehsPerHour="1062"/>
+	<flow type="DEFAULT_VEHTYPE" begin="50" end="60" route="r_14" vehsPerHour="901"/>
+	<flow type="DEFAULT_VEHTYPE" begin="60" end="70" route="r_14" vehsPerHour="2265"/>
+	<flow type="DEFAULT_VEHTYPE" begin="70" end="80" route="r_14" vehsPerHour="1465"/>
+	<flow type="DEFAULT_VEHTYPE" begin="80" end="90" route="r_14" vehsPerHour="2118"/>
+	<flow type="DEFAULT_VEHTYPE" begin="90" end="100" route="r_14" vehsPerHour="2451"/>
+	<flow type="DEFAULT_VEHTYPE" begin="100" end="110" route="r_14" vehsPerHour="1019"/>
+	<flow type="DEFAULT_VEHTYPE" begin="110" end="120" route="r_14" vehsPerHour="2361"/>
+	<flow type="DEFAULT_VEHTYPE" begin="120" end="130" route="r_14" vehsPerHour="965"/>
+    </calibrator>				
+    <!-- Other additionals -->
+    <rerouter id="rr_0" edges="16" pos="231.06,271.12">
+        <interval begin="0.00" end="3600.00">
+            <destProbReroute id="-11" probability="0.50"/>
+            <destProbReroute id="15" probability="0.50"/>
+        </interval>
+    </rerouter>
+    <rerouter id="rr_1" edges="-11" pos="272.17,376.72">
+        <interval begin="0.00" end="3600.00">
+            <destProbReroute id="4" probability="1.00"/>
+        </interval>
+    </rerouter>
+    <rerouter id="rr_10" edges="-0" pos="676.98,238.83">
+        <interval begin="0.00" end="3600.00">
+            <destProbReroute id="3" probability="0.50"/>
+            <destProbReroute id="-24" probability="0.50"/>
+        </interval>
+    </rerouter>
+    <rerouter id="rr_11" edges="3" pos="608.75,227.91">
+        <interval begin="0.00" end="3600.00">
+            <destProbReroute id="6" probability="1.00"/>
+        </interval>
+    </rerouter>
+    <rerouter id="rr_12" edges="6" pos="411.59,332.80">
+        <interval begin="0.00" end="3600.00">
+            <destProbReroute id="5" probability="1.00"/>
+        </interval>
+    </rerouter>
+    <rerouter id="rr_13" edges="-24" pos="359.51,67.17">
+        <interval begin="0.00" end="3600.00">
+            <destProbReroute id="16" probability="1.00"/>
+        </interval>
+    </rerouter>
+    <rerouter id="rr_14" edges="13" pos="351.53,108.57">
+        <interval begin="0.00" end="3600.00">
+            <destProbReroute id="16" probability="1.00"/>
+        </interval>
+    </rerouter>
+    <rerouter id="rr_2" edges="15" pos="38.85,372.39">
+        <interval begin="0.00" end="3600.00">
+            <destProbReroute id="12" probability="1.00"/>
+        </interval>
+    </rerouter>
+    <rerouter id="rr_3" edges="12" pos="200.65,428.45">
+        <interval begin="0.00" end="3600.00">
+            <destProbReroute id="22" probability="1.00"/>
+        </interval>
+    </rerouter>
+    <rerouter id="rr_4" edges="4" pos="230.33,434.22">
+        <interval begin="0.00" end="3600.00">
+            <destProbReroute id="22" probability="1.00"/>
+        </interval>
+    </rerouter>
+    <rerouter id="rr_5" edges="22" pos="433.97,437.93">
+        <interval begin="0.00" end="3600.00">
+            <destProbReroute id="21" probability="0.50"/>
+            <destProbReroute id="25" probability="0.50"/>
+        </interval>
+    </rerouter>
+    <rerouter id="rr_6" edges="25" pos="384.30,348.69">
+        <interval begin="0.00" end="3600.00">
+            <destProbReroute id="5" probability="1.00"/>
+        </interval>
+    </rerouter>
+    <rerouter id="rr_7" edges="5" pos="289.28,397.95">
+        <interval begin="0.00" end="3600.00">
+            <destProbReroute id="4" probability="1.00"/>
+        </interval>
+    </rerouter>
+    <rerouter id="rr_8" edges="21" pos="617.62,333.23">
+        <interval begin="0.00" end="3600.00">
+            <destProbReroute id="-0" probability="0.50"/>
+            <destProbReroute id="14" probability="0.50"/>
+        </interval>
+    </rerouter>
+    <rerouter id="rr_9" edges="14" pos="580.93,247.49">
+        <interval begin="0.00" end="3600.00">
+            <destProbReroute id="6" probability="0.50"/>
+            <destProbReroute id="13" probability="0.50"/>
+        </interval>
+    </rerouter>
+    <variableSpeedSign id="vs_3" lanes="12_1 12_0" pos="136.15,355.19"/>
+    <variableSpeedSign id="vs_4" lanes="12_1 12_0 22_1 22_0 4_1 4_0 -11_2 -11_0 15_2 15_1 16_1 16_2 -24_1 -24_0 13_0 13_1 3_0 3_1 -0_0 -0_1 14_0 14_1 6_0 6_1 21_0 21_1 25_1 25_2 22_0 22_1 4_0 4_1 5_0 5_1" pos="253.02,351.07"/>
+</additional>
