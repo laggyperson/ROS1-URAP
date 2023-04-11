@@ -136,7 +136,8 @@ class SimulationSynchronization(object):
                  carla_simulation,
                  tls_manager='none',
                  sync_vehicle_color=False,
-                 sync_vehicle_lights=False):
+                 sync_vehicle_lights=False,
+                 freq_reduction=10.0):
 
         self.sumo = sumo_simulation
         self.carla = carla_simulation
@@ -171,6 +172,7 @@ class SimulationSynchronization(object):
         self.carla_ego = [] # same as above
 
         self.tick_count = 0 # To keep track of when to update Carla with Sumo data
+        self.freq_reduction = freq_reduction
 
     def tick(self):
         """
@@ -182,29 +184,29 @@ class SimulationSynchronization(object):
         # -----------------
         self.sumo.tick()
 
+        # Spawning new sumo actors in carla (i.e, not controlled by carla).
+        sumo_spawned_actors = self.sumo.spawned_actors - set(self.carla2sumo_ids.values()) - set(self.sumo_ego)
+        for sumo_actor_id in sumo_spawned_actors:
+            self.sumo.subscribe(sumo_actor_id)
+            sumo_actor = self.sumo.get_actor(sumo_actor_id)
+
+            carla_blueprint = BridgeHelper.get_carla_blueprint(sumo_actor, self.sync_vehicle_color)
+            if carla_blueprint is not None:
+                carla_transform = BridgeHelper.get_carla_transform(sumo_actor.transform,
+                                                                   sumo_actor.extent)
+
+                carla_actor_id = self.carla.spawn_actor(carla_blueprint, carla_transform)
+                if carla_actor_id != INVALID_ACTOR_ID:
+                    self.sumo2carla_ids[sumo_actor_id] = carla_actor_id
+            else:
+                self.sumo.unsubscribe(sumo_actor_id)
+
+        # Destroying sumo arrived actors in carla.
+        for sumo_actor_id in self.sumo.destroyed_actors:
+            if sumo_actor_id in self.sumo2carla_ids:
+                self.carla.destroy_actor(self.sumo2carla_ids.pop(sumo_actor_id))
+        
         if self.tick_count == 0:
-            # Spawning new sumo actors in carla (i.e, not controlled by carla).
-            sumo_spawned_actors = self.sumo.spawned_actors - set(self.carla2sumo_ids.values()) - set(self.sumo_ego)
-            for sumo_actor_id in sumo_spawned_actors:
-                self.sumo.subscribe(sumo_actor_id)
-                sumo_actor = self.sumo.get_actor(sumo_actor_id)
-
-                carla_blueprint = BridgeHelper.get_carla_blueprint(sumo_actor, self.sync_vehicle_color)
-                if carla_blueprint is not None:
-                    carla_transform = BridgeHelper.get_carla_transform(sumo_actor.transform,
-                                                                       sumo_actor.extent)
-
-                    carla_actor_id = self.carla.spawn_actor(carla_blueprint, carla_transform)
-                    if carla_actor_id != INVALID_ACTOR_ID:
-                        self.sumo2carla_ids[sumo_actor_id] = carla_actor_id
-                else:
-                    self.sumo.unsubscribe(sumo_actor_id)
-
-            # Destroying sumo arrived actors in carla.
-            for sumo_actor_id in self.sumo.destroyed_actors:
-                if sumo_actor_id in self.sumo2carla_ids:
-                    self.carla.destroy_actor(self.sumo2carla_ids.pop(sumo_actor_id))
-
             # Updating sumo actors in carla.
             for sumo_actor_id in self.sumo2carla_ids:
                 carla_actor_id = self.sumo2carla_ids[sumo_actor_id]
@@ -229,7 +231,7 @@ class SimulationSynchronization(object):
                     self.ego_vehicle.add_state(carla_actor, 1)
                 # ============================================== End ROS ==============================================
 
-        self.tick_count = (self.tick_count + 1) % 10 # Every 10 ticks we will sync the Sumo cars with the Carla world
+        self.tick_count = (self.tick_count + 1) % self.freq_reduction # Every fre_reduction ticks we will sync the Sumo cars with the Carla world
 
         # Updates traffic lights in carla based on sumo information. Will do every tick
         if self.tls_manager == 'sumo':
@@ -320,9 +322,6 @@ class SimulationSynchronization(object):
 
             self.carla.synchronize_vehicle(self.ego_vehicle.carla_actor.id, ego_transform, carla_lights)
 
-            loc = self.ego_vehicle.carla_actor.get_location()
-            print("######### {}, {}, {}".format(loc.x, loc.y, loc.z) )
-
             sumo_transform = BridgeHelper.get_sumo_transform(ego_transform, self.ego_vehicle.carla_actor.bounding_box.extent)
             sumo_lights = None # Not syncing lights for now
 
@@ -337,8 +336,9 @@ class SimulationSynchronization(object):
 
         #     self.sumo.synchronize_vehicle(self.ego_vehicle.sumo_actor, sumo_transform, sumo_lights)
 
-        # Publishing
-        self.ego_vehicle.publish()
+        # Publishing, also with specified tick frequency
+        if self.tick_count == 0:
+            self.ego_vehicle.publish()
         
         # ============================================== End ROS ==============================================
 
@@ -357,7 +357,11 @@ class SimulationSynchronization(object):
         # ================================================ ROS ================================================
         if self.ego_vehicle.carla_actor is not None:
             self.carla.destroy_actor(self.ego_vehicle.carla_actor.id)
-            print("Destroyed Ego Actors")
+            print("Destroyed Ego Actors in Carla")
+
+        if self.ego_vehicle.sumo_actor is not None:
+            self.sumo.destroy_actor(self.ego_vehicle.sumo_actor)
+            print("Destroyed Ego Actors in Sumo")
         # ============================================== End ROS ==============================================
 
         # Destroying synchronized actors.
@@ -366,9 +370,6 @@ class SimulationSynchronization(object):
 
         for sumo_actor_id in self.carla2sumo_ids.values():
             self.sumo.destroy_actor(sumo_actor_id)
-        
-        if self.ego_vehicle.sumo_actor is not None:
-            self.sumo.destroy_actor(self.ego_vehicle.sumo_actor)
 
         # Closing sumo and carla client.
         self.carla.close()
@@ -384,7 +385,7 @@ def synchronization_loop(args):
     carla_simulation = CarlaSimulation(args.carla_host, args.carla_port, args.step_length)
 
     synchronization = SimulationSynchronization(sumo_simulation, carla_simulation, args.tls_manager,
-                                                args.sync_vehicle_color, args.sync_vehicle_lights)
+                                                args.sync_vehicle_color, args.sync_vehicle_lights, args.freq_reduction)
     try:
         while True:
             start = time.time()
@@ -463,7 +464,7 @@ class rosNode:
         transform = self.carla_actor.get_transform()
         print("Spawned Ego Vehicle at: {},{},{}".format(transform.location.x, transform.location.y, transform.location.z))
 
-        # Getting offset
+        # Getting offset by getting the origin
         location = self.carla_actor.get_location()
         location.x, location.y, location.z = 0, 0, 0
         origin_gps = self.carla_map.transform_to_geolocation(location)
@@ -567,6 +568,11 @@ def main():
                            default=2000,
                            type=int,
                            help='TCP port to listen to (default: 2000)')
+    argparser.add_argument('--freq-reduction',
+                           metavar='F',
+                           default=10.0,
+                           type=float,
+                           help='The frequency of updating Sumo NPCs in Carla')
     argparser.add_argument('--sumo-host',
                            metavar='H',
                            default=None,
