@@ -13,7 +13,8 @@ Author: Phillip Chen 11/2022
 import csv
 import sys
 import argparse
-import xml.etree.ElementTree as xml
+import xml.etree.ElementTree as ET
+import xml.dom.minidom
 
 
 # Creating argparser object
@@ -91,18 +92,18 @@ sumoEdges = ["-24", "-11", "-0", "5", "6", "12", "13", "15", "16", "21", "22"] #
 The following creates the xml file.
 """
 # This file is an additional file
-root = xml.Element("additional")
+root = ET.Element("additional")
 
 # Adding routes and calibrators
 for i in range(len(sumoEdges)):
     # Creating Routes
-    route = xml.Element("route")
+    route = ET.Element("route")
     route.set('edges', sumoEdges[i])
     route.set('id', "r_" + str(i))
     root.append(route)
 
     # Creating Calibrator
-    calibrator = xml.Element("calibrator")
+    calibrator = ET.Element("calibrator")
     calibrator.set("pos", "0.00")
     calibrator.set("id", "ca_" + str(i))
     calibrator.set("edge", sumoEdges[i])
@@ -110,18 +111,19 @@ for i in range(len(sumoEdges)):
 
     # Creating Flows
     for time in data.keys():
-        flow = xml.SubElement(calibrator, "flow")
+        flow = ET.SubElement(calibrator, "flow")
         flow.set("vehsPerHour", str(data[time]))
         flow.set("route", "r_" + str(i))
-        flow.set("end", str(time + sampleRate))
         flow.set("begin", str(time))
+        flow.set("end", str(time + sampleRate))
         flow.set("type", "DEFAULT_VEHTYPE")
         
 # Creating xml tree
-tree = xml.ElementTree(root)
+tree = ET.ElementTree(root)
+tree = xml.dom.minidom.parseString(ET.tostring(tree.getroot())).toprettyxml(indent="    ")
 
 # Creating and writing to file
-with open(outputFileName, "wb") as files:
-    tree.write(files)
+with open(outputFileName, "w") as files:
+    files.write(tree)
 
 print("Successfully created " + outputFileName)
