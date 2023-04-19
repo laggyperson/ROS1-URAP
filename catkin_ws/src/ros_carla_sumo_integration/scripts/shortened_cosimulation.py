@@ -366,7 +366,7 @@ class SimulationSynchronization(object):
 
         for sumo_actor_id in self.carla2sumo_ids.values():
             self.sumo.destroy_actor(sumo_actor_id)
-        
+
         if self.ego_vehicle.sumo_actor is not None:
             self.sumo.destroy_actor(self.ego_vehicle.sumo_actor)
             print("Destroyed Ego Actors in Sumo")
@@ -412,7 +412,7 @@ def synchronization_loop(args):
 class rosNode:
     def __init__(self, carla_sim, sumo_sim, carla_map):
         rospy.init_node("cosimulation_client", anonymous=True)
-        pub_topic_name = "/NpcStateArray"
+        pub_topic_name = "carla/npc_state_array2nuvo"
         sub_topic_name = "/est_state_ros1"
 
         self.pub = rospy.Publisher(pub_topic_name, NpcStateArray, queue_size=5)
@@ -440,7 +440,7 @@ class rosNode:
     """
     def spawn(self):
         # Spawning in Carla
-        ego_carla_blueprint = random.choice(self.carla_sim.blueprint_library.filter('vehicle'))
+        ego_carla_blueprint = random.choice(self.carla_sim.blueprint_library.filter('vehicle.bmw.grandtourer'))
         if ego_carla_blueprint.has_attribute('color'):
             color ='255, 0, 0'
             ego_carla_blueprint.set_attribute('color', color)
