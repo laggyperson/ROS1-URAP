@@ -31,6 +31,8 @@ import rospy
 from ros_carla_sumo_integration.msg import StateEst
 from ros_carla_sumo_integration.msg import NpcState
 from ros_carla_sumo_integration.msg import NpcStateArray
+from ros_carla_sumo_integration.msg import SPaT 
+from ros_carla_sumo_integration.msg import SPaTArray
 
 # ==================================================================================================
 # -- General Python imports ------------------------------------------------------------------------
@@ -80,7 +82,11 @@ from sumo_integration.carla_simulation import CarlaSimulation  # pylint: disable
 from sumo_integration.constants import INVALID_ACTOR_ID  # pylint: disable=wrong-import-position
 from sumo_integration.sumo_simulation import SumoSimulation  # pylint: disable=wrong-import-position
 
-# Helper Function
+# ==================================================================================================
+# -- Helper Functions ------------------------------------------------------------------------------
+# ==================================================================================================
+
+# Translates latitude-longitude to XY coordinates
 def latlon_to_XY(lat0, lon0, lat1, lon1):
     ''' 
     Convert latitude and longitude to global X, Y coordinates,
@@ -111,6 +117,24 @@ def xy2z(mat, x_cur, y_cur):
 
     z_cur = z.item(idx_min)
     return z_cur
+
+"""
+Returns True if vehicle within specified meters radius of ego vehicle, else false
+Params:
+    radius (float) : the radius, in meters, to check for the ego vehicle
+    ego_location (Carla.location) : the location object of the ego vehicle
+    npc_location (Carla.location) : the location object of the NPC vehicle
+Ret:
+    within (bool) : True if the vehicle is within 
+"""
+def inRangeOfEgo(radius, ego_location, npc_location):
+    x_term = (ego_location.x - npc_location.x)**2
+    y_term = (ego_location.y - npc_location.y)**2
+    z_term = (ego_location.z - npc_location.z)**2
+
+    veh_dist = math.sqrt(x_term + y_term + z_term)
+    
+    return True if veh_dist <= radius else False
 
 # The mat file for the Gomentum planner route
 gomentum_mat = io.loadmat('/home/arpae/Documents/pure_sim_URAP/pure_sim_ws/src/mpclab_controllers_arpae/nodes/Gomentum_rt3003_ver1.mat')
@@ -307,6 +331,7 @@ class SimulationSynchronization(object):
         # Check if Ego vehicle has spawned, and does so if not
         # Updating Ego Vehicle Position in Carla and Sumo
         # Publishes at the very end
+        # Adding a new functionality: traffic light sensing
         # ================================================ ROS ================================================
         
         # Checking spawn
@@ -336,9 +361,12 @@ class SimulationSynchronization(object):
 
         #     self.sumo.synchronize_vehicle(self.ego_vehicle.sumo_actor, sumo_transform, sumo_lights)
 
-        # Publishing, also with specified tick frequency
+        # Publishing Traffic Light states
+        self.ego_vehicle.publish_tls(self.carla.traffic_light_ids)
+
+        # Publishing NPC states, also with specified tick frequency
         if self.tick_count == 0:
-            self.ego_vehicle.publish()
+            self.ego_vehicle.publish_npc_state()
         
         # ============================================== End ROS ==============================================
 
@@ -412,10 +440,12 @@ def synchronization_loop(args):
 class rosNode:
     def __init__(self, carla_sim, sumo_sim, carla_map):
         rospy.init_node("cosimulation_client", anonymous=True)
-        pub_topic_name = "carla/npc_state_array2nuvo"
+        pub_npc_topic_name = "carla/npc_state_array2nuvo"
+        pub_tls_topic_name = "carla/spats2nuvo"
         sub_topic_name = "/est_state_ros1"
 
-        self.pub = rospy.Publisher(pub_topic_name, NpcStateArray, queue_size=5)
+        self.pub_npc = rospy.Publisher(pub_npc_topic_name, NpcStateArray, queue_size=100)
+        self.pub_tls = rospy.Publisher(pub_tls_topic_name, SPaTArray, queue_size=100)
         self.sub = rospy.Subscriber(sub_topic_name, StateEst, self.callback)
         
         self.current_ego_state = {'t':0, 'x':0, 'y':0, 'psi':0,'lat':0, 'lon':0}
@@ -502,8 +532,22 @@ class rosNode:
     """
     Publishes the attribute curr_sim and resets it to get ready for next timestep
     """
-    def publish(self):
-        self.pub.publish(self.curr_sim)
+    def publish_npc_state(self):
+        self.pub_npc.publish(self.curr_sim)
+
+    """
+    Publishes Traffic Light states for ego vehicle in SPaT array
+    Params:
+        tl_id_list (list[landmarkIDs]) : list of Traffic Light IDs in simulation
+    """
+    """def publish_tls(self, tl_id_list):
+        for landmark_id in tl_id_list:
+            tl_obj = self.carla_sim.world.get_traffic_light(landmark_id)
+            tl_state = SPaT()
+
+            tl_state.s = 
+
+        self.pub_tls.publish()"""
 
     """
     Adds the actor and its state to curr_sim as a state_est type
@@ -518,16 +562,28 @@ class rosNode:
             raise Exception("Cannot add state for actor that isn't in Sumo or Carla. Please specify with parameter sim=0 or 1 for Carla or Sumo respectively")
             exit()
 
-        state = NpcState()
-        transform = actor.get_transform()
+        # Check if ego vehicle is in range of actor
+        if self.carla_actor != None and inRangeOfEgo(20, 
+            self.carla_actor.get_transform().location, 
+            actor.get_transform().location):
 
-        state.loc = transform.location
-        rotation = transform.rotation 
-        state.rot = carla.Vector3D(rotation.roll, rotation.yaw, rotation.pitch)
-        state.vel = actor.get_velocity()
-        state.ang_vel = actor.get_angular_velocity()
+            state = NpcState()
+            transform = actor.get_transform()
 
-        self.curr_sim.npc_states.append(state)
+            # Have to take into account map offset
+            state.loc = transform.location
+            state.loc.x = transform.location.x + self.carla_offset[0]
+            state.loc.y = transform.location.y + self.carla_offset[1]
+            state.loc.y = - state.loc.y
+            # state.loc.z = xy2z(gomentum_mat, state.loc.x, state.loc.y) - 0.9
+
+            rotation = transform.rotation 
+            rotation.yaw = rotation.yaw*180/3.1415 - 90
+            state.rot = carla.Vector3D(rotation.roll, rotation.yaw, rotation.pitch)
+            state.vel = actor.get_velocity()
+            state.ang_vel = actor.get_angular_velocity()
+
+            self.curr_sim.npc_states.append(state)
 
     """
     Updates the current carla actor transform with the current_ego_state
