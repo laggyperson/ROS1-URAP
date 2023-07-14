@@ -86,7 +86,7 @@ with open(fileName) as csv_file:
     print(f"Processed {lineCount} lines.")
 
 # Label for the Sumo Edges in Gomentum
-sumoEdges = ["-24", "-11", "-0", "5", "6", "12", "13", "15", "16", "21", "22"] # Removed 4, 14, 3, and 25 because of performance issues
+sumoEdges = ["-24", "-11", "-0", "5", "6"]# "12", "13", "15", "16", "21" "22"] # Removed 4, 14, 3, and 25 because of performance issues
 
 """ 
 The following creates the xml file.

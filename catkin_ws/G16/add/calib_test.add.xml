@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- generated on 2023-05-30 13:32:41 by Eclipse SUMO netedit Version 1.15.0
+-->
+
+<additional xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/additional_file.xsd">
+    <!-- Routes (used in RouteProbReroutes and calibratorFlows) -->
+    <route id="r_1" edges="6 5 4 22 21 -0 -24 -7#1 16 15 12 22 21 14 6"/>
+    <route id="r_2" edges="16 -11 4 22 21 14 13 16"/>
+    <!-- Calibrators -->
+    <calibrator id="ca_0" edge="16" pos="0.00">
+        <flow type="DEFAULT_VEHTYPE" begin="-0.00" end="60.00" departSpeed="30.00" route="r_2" vehsPerHour="1000.00"/>
+        <flow type="DEFAULT_VEHTYPE" begin="60.00" end="3600.00" departSpeed="30.00" route="r_2" vehsPerHour="1500.00"/>
+        <flow type="DEFAULT_VEHTYPE" begin="3600.00" route="r_2" vehsPerHour="1000.00"/>
+    </calibrator>
+    <calibrator id="ca_1" edge="22" pos="0.00">
+        <flow type="DEFAULT_VEHTYPE" begin="-0.00" end="60.00" route="r_2" vehsPerHour="1000.00"/>
+        <flow type="DEFAULT_VEHTYPE" begin="60.00" end="3600.00" route="r_2" vehsPerHour="1500.00"/>
+        <flow type="DEFAULT_VEHTYPE" begin="3600.00" route="r_2" vehsPerHour="1000.00"/>
+    </calibrator>
+    <calibrator id="ca_2" edge="-11" pos="0.00">
+        <flow type="DEFAULT_VEHTYPE" begin="-0.00" end="60.00" route="r_2" vehsPerHour="1000.00"/>
+        <flow type="DEFAULT_VEHTYPE" begin="60.00" end="3600.00" route="r_2" vehsPerHour="1500.00"/>
+        <flow type="DEFAULT_VEHTYPE" begin="3600.00" route="r_2" vehsPerHour="1000.00"/>
+    </calibrator>
+    <!-- Other additionals -->
+    <rerouter id="rr_0" edges="14" pos="580.77,251.23">
+        <interval begin="0.00" end="3600.00">
+            <routeProbReroute id="r_2" probability="0.50"/>
+            <routeProbReroute id="r_1" probability="0.50"/>
+        </interval>
+    </rerouter>
+    <rerouter id="rr_1" edges="-24" pos="356.86,67.64">
+        <interval begin="0.00" end="3600.00">
+            <routeProbReroute id="r_2" probability="0.50"/>
+            <routeProbReroute id="r_1" probability="0.50"/>
+        </interval>
+    </rerouter>
+    <rerouter id="rr_2" edges="6" pos="415.56,334.88">
+        <interval begin="0.00" end="3600.00">
+            <routeProbReroute id="r_1" probability="1.00"/>
+        </interval>
+    </rerouter>
+</additional>

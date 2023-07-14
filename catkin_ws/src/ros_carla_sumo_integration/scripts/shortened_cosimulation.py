@@ -362,7 +362,7 @@ class SimulationSynchronization(object):
         #     self.sumo.synchronize_vehicle(self.ego_vehicle.sumo_actor, sumo_transform, sumo_lights)
 
         # Publishing Traffic Light states
-        self.ego_vehicle.publish_tls(self.carla.traffic_light_ids)
+        # self.ego_vehicle.publish_tls(self.carla.traffic_light_ids)
 
         # Publishing NPC states, also with specified tick frequency
         if self.tick_count == 0:
@@ -534,6 +534,7 @@ class rosNode:
     """
     def publish_npc_state(self):
         self.pub_npc.publish(self.curr_sim)
+        self.curr_sim = NpcStateArray()
 
     """
     Publishes Traffic Light states for ego vehicle in SPaT array
@@ -562,28 +563,23 @@ class rosNode:
             raise Exception("Cannot add state for actor that isn't in Sumo or Carla. Please specify with parameter sim=0 or 1 for Carla or Sumo respectively")
             exit()
 
-        # Check if ego vehicle is in range of actor
-        if self.carla_actor != None and inRangeOfEgo(20, 
-            self.carla_actor.get_transform().location, 
-            actor.get_transform().location):
+        state = NpcState()
+        transform = actor.get_transform()
 
-            state = NpcState()
-            transform = actor.get_transform()
+        # Have to take into account map offset
+        state.loc = transform.location
+        state.loc.x = transform.location.x + self.carla_offset[0]
+        state.loc.y = transform.location.y + self.carla_offset[1]
+        state.loc.y = - state.loc.y
+        # state.loc.z = xy2z(gomentum_mat, state.loc.x, state.loc.y) - 0.9
 
-            # Have to take into account map offset
-            state.loc = transform.location
-            state.loc.x = transform.location.x + self.carla_offset[0]
-            state.loc.y = transform.location.y + self.carla_offset[1]
-            state.loc.y = - state.loc.y
-            # state.loc.z = xy2z(gomentum_mat, state.loc.x, state.loc.y) - 0.9
+        rotation = transform.rotation 
+        rotation.yaw = rotation.yaw*180/3.1415 - 90
+        state.rot = carla.Vector3D(rotation.roll, rotation.yaw, rotation.pitch)
+        state.vel = actor.get_velocity()
+        state.ang_vel = actor.get_angular_velocity()
 
-            rotation = transform.rotation 
-            rotation.yaw = rotation.yaw*180/3.1415 - 90
-            state.rot = carla.Vector3D(rotation.roll, rotation.yaw, rotation.pitch)
-            state.vel = actor.get_velocity()
-            state.ang_vel = actor.get_angular_velocity()
-
-            self.curr_sim.npc_states.append(state)
+        self.curr_sim.npc_states.append(state)
 
     """
     Updates the current carla actor transform with the current_ego_state
