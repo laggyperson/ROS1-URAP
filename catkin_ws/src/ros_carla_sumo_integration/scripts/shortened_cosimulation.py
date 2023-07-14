@@ -19,6 +19,7 @@
 
     WORK IN PROGRESS - Haven't connected to corresponding Arpa-E Vehicle node
     Have connected to a dummy node: seems to be working!
+    7/14 Update: Have connected to whole system, but need to fix ego vehicle reacting to NPCs
 
     Date: November, 2022
     Author: Phillip Chen 
@@ -441,7 +442,7 @@ class rosNode:
     def __init__(self, carla_sim, sumo_sim, carla_map):
         rospy.init_node("cosimulation_client", anonymous=True)
         pub_npc_topic_name = "carla/npc_state_array2nuvo"
-        pub_tls_topic_name = "carla/spats2nuvo"
+        # pub_tls_topic_name = "carla/spats2nuvo" Haven't implemented yet
         sub_topic_name = "/est_state_ros1"
 
         self.pub_npc = rospy.Publisher(pub_npc_topic_name, NpcStateArray, queue_size=100)
@@ -451,8 +452,7 @@ class rosNode:
         self.current_ego_state = {'t':0, 'x':0, 'y':0, 'psi':0,'lat':0, 'lon':0}
         self.state_traj = []
         self.ego_color = (255, 0, 0)
-        self.ego_check = 0      # 0 means not yet spawned, 1 means ready to spawn, 2 means spawned, 3 means Carla Autopilot
-
+        self.ego_check = 0 # 0 means not yet spawned, 1 means ready to spawn, 2 means spawned
         self.carla_actor = None
         self.sumo_actor = None
 
@@ -537,7 +537,7 @@ class rosNode:
         self.curr_sim = NpcStateArray()
 
     """
-    Publishes Traffic Light states for ego vehicle in SPaT array
+    Publishes Traffic Light states for ego vehicle in SPaT array. Have not implmented yet because corresponding planner node doesn't have function yet
     Params:
         tl_id_list (list[landmarkIDs]) : list of Traffic Light IDs in simulation
     """
@@ -549,6 +549,7 @@ class rosNode:
             tl_state.s = 
 
         self.pub_tls.publish()"""
+
 
     """
     Adds the actor and its state to curr_sim as a state_est type
