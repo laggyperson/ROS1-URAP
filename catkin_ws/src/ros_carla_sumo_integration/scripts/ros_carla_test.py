@@ -239,7 +239,7 @@ def main():
     num_loc3 = 7   # before hard curve
     num_loc4 = 10   # Pearl ave
     # num_npcs = num_loc1 + num_loc2 + num_loc3 + num_loc4 
-    num_npcs = 20
+    num_npcs = 200
 
     npc_status = True # if False, we don't use NPC
     car_lights_on = False
@@ -293,13 +293,13 @@ def main():
             '''
             # spawn_points = world.get_map().get_spawn_points()
 
-            # force to increase the number of spawn points
+            # # force to increase the number of spawn points
             # for k in range(num_npcs-len(spawn_points)):
-                # tf = random.choice(world.get_map().get_spawn_points())        
-                # # Fix the x,y,z position to check where it spawns
-                # tf.location.x += 2*k
-                # tf.location.y += 4*k         
-                # spawn_points.append(tf)
+            #     tf = random.choice(world.get_map().get_spawn_points())        
+            #     # Fix the x,y,z position to check where it spawns
+            #     tf.location.x += 2*k
+            #     tf.location.y += 4*k         
+            #     spawn_points.append(tf)
 
             # force to fix spawn points around the origin(parking lot)
             spawn_points = []
@@ -360,8 +360,8 @@ def main():
 
             if num_npcs <= number_of_spawn_points:
                 random.shuffle(spawn_points)
-            elif num_npcs > number_of_spawn_points:
-                num_npcs = number_of_spawn_points
+            # elif num_npcs > number_of_spawn_points:
+            #     num_npcs = number_of_spawn_points
 
             # @todo cannot import these directly.
             SpawnActor = carla.command.SpawnActor

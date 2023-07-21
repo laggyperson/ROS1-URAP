@@ -256,7 +256,7 @@ class SimulationSynchronization(object):
                     self.ego_vehicle.add_state(carla_actor, 1)
                 # ============================================== End ROS ==============================================
 
-        self.tick_count = (self.tick_count + 1) % self.freq_reduction # Every fre_reduction ticks we will sync the Sumo cars with the Carla world
+        self.tick_count = (self.tick_count + 1) % self.freq_reduction # Every freq_reduction ticks we will sync the Sumo cars with the Carla world
 
         # Updates traffic lights in carla based on sumo information. Will do every tick
         if self.tls_manager == 'sumo':
@@ -312,10 +312,11 @@ class SimulationSynchronization(object):
             self.sumo.synchronize_vehicle(sumo_actor_id, sumo_transform, sumo_lights)
 
             # ================================================ ROS ================================================
-            # Adds Carla actor state to ego vehicle's curr_sim array
+            # Adds Carla actor state to ego vehicle's curr_sim array.
+            # Potential Issue: could be adding ego itself
             # ================================================ ROS ================================================
-            if self.ego_vehicle.ego_check > 1:
-                self.ego_vehicle.add_state(carla_actor, 0)
+            # if self.ego_vehicle.ego_check > 1:
+            #     self.ego_vehicle.add_state(carla_actor, 0)
             # ============================================== End ROS ==============================================
 
         # Updates traffic lights in sumo based on carla information.
@@ -445,8 +446,8 @@ class rosNode:
         # pub_tls_topic_name = "carla/spats2nuvo" Haven't implemented yet
         sub_topic_name = "/est_state_ros1"
 
-        self.pub_npc = rospy.Publisher(pub_npc_topic_name, NpcStateArray, queue_size=100)
-        self.pub_tls = rospy.Publisher(pub_tls_topic_name, SPaTArray, queue_size=100)
+        self.pub_npc = rospy.Publisher(pub_npc_topic_name, NpcStateArray, queue_size=1)
+        # self.pub_tls = rospy.Publisher(pub_tls_topic_name, SPaTArray, queue_size=100)
         self.sub = rospy.Subscriber(sub_topic_name, StateEst, self.callback)
         
         self.current_ego_state = {'t':0, 'x':0, 'y':0, 'psi':0,'lat':0, 'lon':0}
@@ -533,6 +534,7 @@ class rosNode:
     Publishes the attribute curr_sim and resets it to get ready for next timestep
     """
     def publish_npc_state(self):
+        print(self.curr_sim)
         self.pub_npc.publish(self.curr_sim)
         self.curr_sim = NpcStateArray()
 
@@ -552,7 +554,7 @@ class rosNode:
 
 
     """
-    Adds the actor and its state to curr_sim as a state_est type
+    Adds the actor and its state to curr_sim as a NpcState type
     Params:
         actor - the actor object to get attributes from Carla sim; will always be a Carla actor object
         sim - integer describing what simulation actor is from, 0=Carla, 1=Sumo, anything else errors
@@ -566,19 +568,30 @@ class rosNode:
 
         state = NpcState()
         transform = actor.get_transform()
+        vel = actor.get_velocity()
+        ang_vel = actor.get_angular_velocity()
+        # print("Transform: {}, {}, {}".format(transform.rotation.roll, transform.rotation.yaw, transform.rotation.pitch))
+        # print("Velocity: {}, {}, {}".format(vel.x, vel.y, vel.z))
+        # print("Angular Velocity: {}, {}, {}".format(ang_vel.x, ang_vel.y, ang_vel.z))
 
         # Have to take into account map offset
+        # Location
         state.loc = transform.location
         state.loc.x = transform.location.x + self.carla_offset[0]
         state.loc.y = transform.location.y + self.carla_offset[1]
         state.loc.y = - state.loc.y
-        # state.loc.z = xy2z(gomentum_mat, state.loc.x, state.loc.y) - 0.9
+        state.loc.z = xy2z(gomentum_mat, state.loc.x, state.loc.y) - 0.9
 
+        # Velocity
+        state.vel = vel
+
+        # Angular Velocity
+        state.ang_vel = ang_vel
+
+        # Rotation
         rotation = transform.rotation 
         rotation.yaw = rotation.yaw*180/3.1415 - 90
         state.rot = carla.Vector3D(rotation.roll, rotation.yaw, rotation.pitch)
-        state.vel = actor.get_velocity()
-        state.ang_vel = actor.get_angular_velocity()
 
         self.curr_sim.npc_states.append(state)
 
@@ -599,7 +612,7 @@ class rosNode:
         # Z offset
         transform.location.z = xy2z(gomentum_mat, self.current_ego_state['x'], self.current_ego_state['y']) + 0.9
 
-        print("Moving the ego vehicle to %s in Carla" % self.carla_actor.get_location())
+        # print("Moving the ego vehicle to %s in Carla" % self.carla_actor.get_location())
 
         return transform
 
