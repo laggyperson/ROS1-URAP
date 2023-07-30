@@ -121,6 +121,7 @@ def xy2z(mat, x_cur, y_cur):
 
 """
 Returns True if vehicle within specified meters radius of ego vehicle, else false
+Not using anymore, but keeping it just in case
 Params:
     radius (float) : the radius, in meters, to check for the ego vehicle
     ego_location (Carla.location) : the location object of the ego vehicle
@@ -442,11 +443,12 @@ def synchronization_loop(args):
 class rosNode:
     def __init__(self, carla_sim, sumo_sim, carla_map):
         rospy.init_node("cosimulation_client", anonymous=True)
-        pub_npc_topic_name = "carla/npc_state_array2nuvo"
+        pub_npc_topic_name = "carla/npc_state_array"
+
         # pub_tls_topic_name = "carla/spats2nuvo" Haven't implemented yet
         sub_topic_name = "/est_state_ros1"
 
-        self.pub_npc = rospy.Publisher(pub_npc_topic_name, NpcStateArray, queue_size=1)
+        self.pub_npc = rospy.Publisher(pub_npc_topic_name, NpcStateArray, queue_size=100)
         # self.pub_tls = rospy.Publisher(pub_tls_topic_name, SPaTArray, queue_size=100)
         self.sub = rospy.Subscriber(sub_topic_name, StateEst, self.callback)
         
@@ -534,7 +536,6 @@ class rosNode:
     Publishes the attribute curr_sim and resets it to get ready for next timestep
     """
     def publish_npc_state(self):
-        print(self.curr_sim)
         self.pub_npc.publish(self.curr_sim)
         self.curr_sim = NpcStateArray()
 
@@ -603,8 +604,8 @@ class rosNode:
         transform = self.carla_actor.get_transform()
 
         # Updating with current_state
-        transform.location.x = self.current_ego_state['x'] - self.carla_offset[0]
-        transform.location.y = self.current_ego_state['y'] - self.carla_offset[1]
+        transform.location.x = self.current_ego_state['x'] #- self.carla_offset[0]
+        transform.location.y = self.current_ego_state['y'] #- self.carla_offset[1]
         transform.location.y = -transform.location.y 
         transform.rotation.yaw = self.current_ego_state['psi']*180/3.1415 - 90
         # transform.rotation.yaw *= -1
