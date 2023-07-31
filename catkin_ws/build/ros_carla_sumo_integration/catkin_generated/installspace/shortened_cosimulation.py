@@ -19,6 +19,7 @@
 
     WORK IN PROGRESS - Haven't connected to corresponding Arpa-E Vehicle node
     Have connected to a dummy node: seems to be working!
+    7/14 Update: Have connected to whole system, but need to fix ego vehicle reacting to NPCs
 
     Date: November, 2022
     Author: Phillip Chen 
@@ -28,9 +29,11 @@
 # -- ROS imports -----------------------------------------------------------------------------------
 # ==================================================================================================
 import rospy
-from ros_carla_sumo_integration.msg import state_est
+from ros_carla_sumo_integration.msg import StateEst
 from ros_carla_sumo_integration.msg import NpcState
 from ros_carla_sumo_integration.msg import NpcStateArray
+from ros_carla_sumo_integration.msg import SPaT 
+from ros_carla_sumo_integration.msg import SPaTArray
 
 # ==================================================================================================
 # -- General Python imports ------------------------------------------------------------------------
@@ -41,12 +44,10 @@ import time
 import glob
 import os
 import sys
-import json
 import math
 import random
-import collections
-import enum
-import lxml.etree as ET
+from scipy import io
+import numpy as np
 
 # ==================================================================================================
 # -- Carla import ----------------------------------------------------------------------------------
@@ -83,6 +84,64 @@ from sumo_integration.constants import INVALID_ACTOR_ID  # pylint: disable=wrong
 from sumo_integration.sumo_simulation import SumoSimulation  # pylint: disable=wrong-import-position
 
 # ==================================================================================================
+# -- Helper Functions ------------------------------------------------------------------------------
+# ==================================================================================================
+
+# Translates latitude-longitude to XY coordinates
+def latlon_to_XY(lat0, lon0, lat1, lon1):
+    ''' 
+    Convert latitude and longitude to global X, Y coordinates,
+    using an equirectangular projection.
+    X = meters east of lon0
+    Y = meters north of lat0
+    Sources: http://www.movable-type.co.uk/scripts/latlong.html
+             https://github.com/MPC-Car/StochasticLC/blob/master/controller.py
+    '''
+    R_earth = 6371000 # meters
+    delta_lat = math.radians(lat1 - lat0)
+    delta_lon = math.radians(lon1 - lon0)
+
+    lat_avg = 0.5 * ( math.radians(lat1) + math.radians(lat0) )
+    X = R_earth * delta_lon * math.cos(lat_avg)
+    Y = R_earth * delta_lat
+
+    return X,Y
+
+# Uses the mat file for Gomentum to get the z changes
+def xy2z(mat, x_cur, y_cur):
+    z = mat['road_z']
+    x = mat['road_x']
+    y = mat['road_y']
+
+    norm_array = (x - x_cur)**2 + (y - y_cur)**2
+    idx_min = np.argmin(norm_array)
+
+    z_cur = z.item(idx_min)
+    return z_cur
+
+"""
+Returns True if vehicle within specified meters radius of ego vehicle, else false
+Not using anymore, but keeping it just in case
+Params:
+    radius (float) : the radius, in meters, to check for the ego vehicle
+    ego_location (Carla.location) : the location object of the ego vehicle
+    npc_location (Carla.location) : the location object of the NPC vehicle
+Ret:
+    within (bool) : True if the vehicle is within 
+"""
+def inRangeOfEgo(radius, ego_location, npc_location):
+    x_term = (ego_location.x - npc_location.x)**2
+    y_term = (ego_location.y - npc_location.y)**2
+    z_term = (ego_location.z - npc_location.z)**2
+
+    veh_dist = math.sqrt(x_term + y_term + z_term)
+    
+    return True if veh_dist <= radius else False
+
+# The mat file for the Gomentum planner route
+gomentum_mat = io.loadmat('/home/arpae/Documents/pure_sim_URAP/pure_sim_ws/src/mpclab_controllers_arpae/nodes/Gomentum_rt3003_ver1.mat')
+
+# ==================================================================================================
 # --------------------------------------------------------------------------------------------------
 # -- run_synchronization.py ------------------------------------------------------------------------
 # --------------------------------------------------------------------------------------------------
@@ -103,7 +162,8 @@ class SimulationSynchronization(object):
                  carla_simulation,
                  tls_manager='none',
                  sync_vehicle_color=False,
-                 sync_vehicle_lights=False):
+                 sync_vehicle_lights=False,
+                 freq_reduction=10.0):
 
         self.sumo = sumo_simulation
         self.carla = carla_simulation
@@ -137,9 +197,13 @@ class SimulationSynchronization(object):
         self.sumo_ego = [] # List of ID's for ego sumo actor
         self.carla_ego = [] # same as above
 
+        self.tick_count = 0 # To keep track of when to update Carla with Sumo data
+        self.freq_reduction = freq_reduction
+
     def tick(self):
         """
         Tick to simulation synchronization
+        Going to change the frequency of ticks for performance
         """
         # -----------------
         # sumo-->carla sync
@@ -167,32 +231,35 @@ class SimulationSynchronization(object):
         for sumo_actor_id in self.sumo.destroyed_actors:
             if sumo_actor_id in self.sumo2carla_ids:
                 self.carla.destroy_actor(self.sumo2carla_ids.pop(sumo_actor_id))
+        
+        if self.tick_count == 0:
+            # Updating sumo actors in carla.
+            for sumo_actor_id in self.sumo2carla_ids:
+                carla_actor_id = self.sumo2carla_ids[sumo_actor_id]
 
-        # Updating sumo actors in carla.
-        for sumo_actor_id in self.sumo2carla_ids:
-            carla_actor_id = self.sumo2carla_ids[sumo_actor_id]
+                sumo_actor = self.sumo.get_actor(sumo_actor_id)
+                carla_actor = self.carla.get_actor(carla_actor_id)
 
-            sumo_actor = self.sumo.get_actor(sumo_actor_id)
-            carla_actor = self.carla.get_actor(carla_actor_id)
+                carla_transform = BridgeHelper.get_carla_transform(sumo_actor.transform,
+                                                                   sumo_actor.extent)
+                if self.sync_vehicle_lights:
+                    carla_lights = BridgeHelper.get_carla_lights_state(carla_actor.get_light_state(),
+                                                                       sumo_actor.signals)
+                else:
+                    carla_lights = None
 
-            carla_transform = BridgeHelper.get_carla_transform(sumo_actor.transform,
-                                                               sumo_actor.extent)
-            if self.sync_vehicle_lights:
-                carla_lights = BridgeHelper.get_carla_lights_state(carla_actor.get_light_state(),
-                                                                   sumo_actor.signals)
-            else:
-                carla_lights = None
+                self.carla.synchronize_vehicle(carla_actor_id, carla_transform, carla_lights)
 
-            self.carla.synchronize_vehicle(carla_actor_id, carla_transform, carla_lights)
+                # ================================================ ROS ================================================
+                # Adds Sumo actor state to ego vehicle's curr_sim array
+                # ================================================ ROS ================================================
+                if self.ego_vehicle.ego_check > 1:
+                    self.ego_vehicle.add_state(carla_actor, 1)
+                # ============================================== End ROS ==============================================
 
-            # ================================================ ROS ================================================
-            # Adds Sumo actor state to ego vehicle's curr_sim array
-            # ================================================ ROS ================================================
-            if self.ego_vehicle.ego_check > 1:
-                self.ego_vehicle.add_state(carla_actor, 1)
-            # ============================================== End ROS ==============================================
+        self.tick_count = (self.tick_count + 1) % self.freq_reduction # Every freq_reduction ticks we will sync the Sumo cars with the Carla world
 
-        # Updates traffic lights in carla based on sumo information.
+        # Updates traffic lights in carla based on sumo information. Will do every tick
         if self.tls_manager == 'sumo':
             common_landmarks = self.sumo.traffic_light_ids & self.carla.traffic_light_ids
             for landmark_id in common_landmarks:
@@ -246,10 +313,11 @@ class SimulationSynchronization(object):
             self.sumo.synchronize_vehicle(sumo_actor_id, sumo_transform, sumo_lights)
 
             # ================================================ ROS ================================================
-            # Adds Carla actor state to ego vehicle's curr_sim array
+            # Adds Carla actor state to ego vehicle's curr_sim array.
+            # Potential Issue: could be adding ego itself
             # ================================================ ROS ================================================
-            if self.ego_vehicle.ego_check > 1:
-                self.ego_vehicle.add_state(carla_actor, 0)
+            # if self.ego_vehicle.ego_check > 1:
+            #     self.ego_vehicle.add_state(carla_actor, 0)
             # ============================================== End ROS ==============================================
 
         # Updates traffic lights in sumo based on carla information.
@@ -266,6 +334,7 @@ class SimulationSynchronization(object):
         # Check if Ego vehicle has spawned, and does so if not
         # Updating Ego Vehicle Position in Carla and Sumo
         # Publishes at the very end
+        # Adding a new functionality: traffic light sensing
         # ================================================ ROS ================================================
         
         # Checking spawn
@@ -286,17 +355,21 @@ class SimulationSynchronization(object):
 
             self.sumo.synchronize_vehicle(self.ego_vehicle.sumo_actor, sumo_transform, sumo_lights)
 
-        """# Temporary npc for Ego Vehicle
-        if self.ego_vehicle.ego_check == 3:
-            ego_transform = self.ego_vehicle.carla_actor.get_transform()
+        # # Temporary npc for Ego Vehicle
+        # if self.ego_vehicle.ego_check == 3:
+        #     ego_transform = self.ego_vehicle.carla_actor.get_transform()
 
-            sumo_transform = BridgeHelper.get_sumo_transform(ego_transform, self.ego_vehicle.carla_actor.bounding_box.extent)
-            sumo_lights = None # Not syncing lights for now
+        #     sumo_transform = BridgeHelper.get_sumo_transform(ego_transform, self.ego_vehicle.carla_actor.bounding_box.extent)
+        #     sumo_lights = None # Not syncing lights for now
 
-            self.sumo.synchronize_vehicle(self.ego_vehicle.sumo_actor, sumo_transform, sumo_lights)"""
+        #     self.sumo.synchronize_vehicle(self.ego_vehicle.sumo_actor, sumo_transform, sumo_lights)
 
-        # Publishing
-        self.ego_vehicle.publish()
+        # Publishing Traffic Light states
+        # self.ego_vehicle.publish_tls(self.carla.traffic_light_ids)
+
+        # Publishing NPC states, also with specified tick frequency
+        if self.tick_count == 0:
+            self.ego_vehicle.publish_npc_state()
         
         # ============================================== End ROS ==============================================
 
@@ -315,7 +388,7 @@ class SimulationSynchronization(object):
         # ================================================ ROS ================================================
         if self.ego_vehicle.carla_actor is not None:
             self.carla.destroy_actor(self.ego_vehicle.carla_actor.id)
-            print("Destroyed Ego Actors")
+            print("Destroyed Ego Actors in Carla")
         # ============================================== End ROS ==============================================
 
         # Destroying synchronized actors.
@@ -324,9 +397,10 @@ class SimulationSynchronization(object):
 
         for sumo_actor_id in self.carla2sumo_ids.values():
             self.sumo.destroy_actor(sumo_actor_id)
-        
+
         if self.ego_vehicle.sumo_actor is not None:
             self.sumo.destroy_actor(self.ego_vehicle.sumo_actor)
+            print("Destroyed Ego Actors in Sumo")
 
         # Closing sumo and carla client.
         self.carla.close()
@@ -342,7 +416,7 @@ def synchronization_loop(args):
     carla_simulation = CarlaSimulation(args.carla_host, args.carla_port, args.step_length)
 
     synchronization = SimulationSynchronization(sumo_simulation, carla_simulation, args.tls_manager,
-                                                args.sync_vehicle_color, args.sync_vehicle_lights)
+                                                args.sync_vehicle_color, args.sync_vehicle_lights, args.freq_reduction)
     try:
         while True:
             start = time.time()
@@ -369,17 +443,19 @@ def synchronization_loop(args):
 class rosNode:
     def __init__(self, carla_sim, sumo_sim, carla_map):
         rospy.init_node("cosimulation_client", anonymous=True)
-        pub_topic_name = "/vehicle/NpcStateArray"
-        sub_topic_name = "/vehicle/state_est"
+        pub_npc_topic_name = "carla/npc_state_array"
 
-        self.pub = rospy.Publisher(pub_topic_name, NpcStateArray, queue_size=5)
-        self.sub = rospy.Subscriber(sub_topic_name, state_est, self.callback)
+        # pub_tls_topic_name = "carla/spats2nuvo" Haven't implemented yet
+        sub_topic_name = "/est_state_ros1"
+
+        self.pub_npc = rospy.Publisher(pub_npc_topic_name, NpcStateArray, queue_size=100)
+        # self.pub_tls = rospy.Publisher(pub_tls_topic_name, SPaTArray, queue_size=100)
+        self.sub = rospy.Subscriber(sub_topic_name, StateEst, self.callback)
         
         self.current_ego_state = {'t':0, 'x':0, 'y':0, 'psi':0,'lat':0, 'lon':0}
         self.state_traj = []
         self.ego_color = (255, 0, 0)
-        self.ego_check = 0      # 0 means not yet spawned, 1 means ready to spawn, 2 means spawned, 3 means Carla Autopilot
-
+        self.ego_check = 0 # 0 means not yet spawned, 1 means ready to spawn, 2 means spawned
         self.carla_actor = None
         self.sumo_actor = None
 
@@ -387,38 +463,50 @@ class rosNode:
         self.sumo_sim = sumo_sim
 
         self.carla_map = carla_map
-        self.carla_offset = []
+        self.carla_offset = [0, 0]
 
         # Array to be published
         self.curr_sim = NpcStateArray()
 
     """
-    Spawns the ego vehicle. Currently spawning in a random location
+    Spawns the ego vehicle at the subscribed location.
     """
     def spawn(self):
         # Spawning in Carla
-        ego_carla_blueprint = random.choice(self.carla_sim.blueprint_library.filter('vehicle'))
-        #if ego_carla_blueprint.has_attribute('color'):
-        #    ego_carla_blueprint.set_attribute('color', self.ego_vehicle.ego_color)
+        ego_carla_blueprint = random.choice(self.carla_sim.blueprint_library.filter('vehicle.bmw.grandtourer'))
+        if ego_carla_blueprint.has_attribute('color'):
+            color ='255, 0, 0'
+            ego_carla_blueprint.set_attribute('color', color)
 
         # Obtain the Carla.transform for random spawn_points
         transform = random.choice(self.carla_map.get_spawn_points())
-    
-        """
-        # Fix the x,y,z position to check where it spawns. Not working right now, will comment out
-        transform.location.x = 390
-        transform.location.y = 331
-        transform.location.z = 1.5
-        transform.rotation.yaw = 0"""
 
         # Tell the Carla world to spawn the vehicle
         self.carla_actor = self.carla_sim.world.spawn_actor(ego_carla_blueprint, transform)
+        self.carla_sim.tick()
+        transform = self.carla_actor.get_transform()
+    
+        # Fix the x,y,z spawn point
+        transform.location.x = self.current_ego_state['x']
+        transform.location.y = self.current_ego_state['y']
+        transform.location.z = 17
+        transform.rotation.yaw = self.current_ego_state['psi']
+        self.carla_sim.synchronize_vehicle(self.carla_actor.id, transform, None)
+        self.carla_sim.tick()
 
+        transform = self.carla_actor.get_transform()
+        print("Spawned Ego Vehicle at: {},{},{}".format(transform.location.x, transform.location.y, transform.location.z))
 
-        # Setting offset
+        # Getting offset by getting the origin
         location = self.carla_actor.get_location()
-        self.carla_offset = [location.x - self.current_ego_state['x'], location.y - self.current_ego_state['y']]
+        location.x, location.y, location.z = 0, 0, 0
+        origin_gps = self.carla_map.transform_to_geolocation(location)
+        lat_o, lon_o = origin_gps.latitude, origin_gps.longitude
+        LAT0, LON0 = 38.0143934, -122.0135798
+        offset_x, offset_y = latlon_to_XY(LAT0, LON0, lat_o, lon_o)
+        self.carla_offset = [offset_x, offset_y]
 
+        print(f"The offset is {offset_x} and {offset_y}")
         # Spawning in Sumo based on Carla object. POTENTIAL ISSUE: Cannot create sumo object because blueprints can't translate
         sumo_type_id = BridgeHelper.get_sumo_vtype(self.carla_actor)
         color = self.carla_actor.attributes.get('color', None)
@@ -448,11 +536,27 @@ class rosNode:
     """
     Publishes the attribute curr_sim and resets it to get ready for next timestep
     """
-    def publish(self):
-        self.pub.publish(self.curr_sim)
+    def publish_npc_state(self):
+        self.pub_npc.publish(self.curr_sim)
+        self.curr_sim = NpcStateArray()
 
     """
-    Adds the actor and its state to curr_sim as a state_est type
+    Publishes Traffic Light states for ego vehicle in SPaT array. Have not implmented yet because corresponding planner node doesn't have function yet
+    Params:
+        tl_id_list (list[landmarkIDs]) : list of Traffic Light IDs in simulation
+    """
+    """def publish_tls(self, tl_id_list):
+        for landmark_id in tl_id_list:
+            tl_obj = self.carla_sim.world.get_traffic_light(landmark_id)
+            tl_state = SPaT()
+
+            tl_state.s = 
+
+        self.pub_tls.publish()"""
+
+
+    """
+    Adds the actor and its state to curr_sim as a NpcState type
     Params:
         actor - the actor object to get attributes from Carla sim; will always be a Carla actor object
         sim - integer describing what simulation actor is from, 0=Carla, 1=Sumo, anything else errors
@@ -466,12 +570,30 @@ class rosNode:
 
         state = NpcState()
         transform = actor.get_transform()
+        vel = actor.get_velocity()
+        ang_vel = actor.get_angular_velocity()
+        # print("Transform: {}, {}, {}".format(transform.rotation.roll, transform.rotation.yaw, transform.rotation.pitch))
+        # print("Velocity: {}, {}, {}".format(vel.x, vel.y, vel.z))
+        # print("Angular Velocity: {}, {}, {}".format(ang_vel.x, ang_vel.y, ang_vel.z))
 
+        # Have to take into account map offset
+        # Location
         state.loc = transform.location
+        state.loc.x = transform.location.x #+ self.carla_offset[0]
+        state.loc.y = transform.location.y #+ self.carla_offset[1]
+        state.loc.y = - state.loc.y
+        state.loc.z = xy2z(gomentum_mat, state.loc.x, state.loc.y) - 0.9
+
+        # Velocity
+        state.vel = vel
+
+        # Angular Velocity
+        state.ang_vel = ang_vel
+
+        # Rotation
         rotation = transform.rotation 
+        # rotation.yaw = rotation.yaw*180/3.1415 - 90
         state.rot = carla.Vector3D(rotation.roll, rotation.yaw, rotation.pitch)
-        state.vel = actor.get_velocity()
-        state.ang_vel = actor.get_angular_velocity()
 
         self.curr_sim.npc_states.append(state)
 
@@ -483,11 +605,13 @@ class rosNode:
         transform = self.carla_actor.get_transform()
 
         # Updating with current_state
-        transform.location.x = self.current_ego_state['x'] + self.carla_offset[0]
-        transform.location.y = self.current_ego_state['y'] + self.carla_offset[1]
+        transform.location.x = self.current_ego_state['x'] - self.carla_offset[0]
+        transform.location.y = self.current_ego_state['y'] - self.carla_offset[1]
         transform.location.y = -transform.location.y 
-        transform.rotation.yaw = self.current_ego_state['psi']*180/3.1415
-        transform.rotation.yaw *= -1
+        transform.rotation.yaw = self.current_ego_state['psi']*180/3.1415 - 90
+
+        # Z offset
+        transform.location.z = xy2z(gomentum_mat, self.current_ego_state['x'], self.current_ego_state['y']) + 0.9
 
         # print("Moving the ego vehicle to %s in Carla" % self.carla_actor.get_location())
 
@@ -511,6 +635,11 @@ def main():
                            default=2000,
                            type=int,
                            help='TCP port to listen to (default: 2000)')
+    argparser.add_argument('--freq-reduction',
+                           metavar='F',
+                           default=10.0,
+                           type=float,
+                           help='The frequency of updating Sumo NPCs in Carla')
     argparser.add_argument('--sumo-host',
                            metavar='H',
                            default=None,

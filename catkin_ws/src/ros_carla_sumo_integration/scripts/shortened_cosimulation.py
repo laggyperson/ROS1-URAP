@@ -506,6 +506,7 @@ class rosNode:
         offset_x, offset_y = latlon_to_XY(LAT0, LON0, lat_o, lon_o)
         self.carla_offset = [offset_x, offset_y]
 
+        print(f"The offset is {offset_x} and {offset_y}")
         # Spawning in Sumo based on Carla object. POTENTIAL ISSUE: Cannot create sumo object because blueprints can't translate
         sumo_type_id = BridgeHelper.get_sumo_vtype(self.carla_actor)
         color = self.carla_actor.attributes.get('color', None)
@@ -578,8 +579,8 @@ class rosNode:
         # Have to take into account map offset
         # Location
         state.loc = transform.location
-        state.loc.x = transform.location.x + self.carla_offset[0]
-        state.loc.y = transform.location.y + self.carla_offset[1]
+        state.loc.x = transform.location.x #+ self.carla_offset[0]
+        state.loc.y = transform.location.y #+ self.carla_offset[1]
         state.loc.y = - state.loc.y
         state.loc.z = xy2z(gomentum_mat, state.loc.x, state.loc.y) - 0.9
 
@@ -591,7 +592,7 @@ class rosNode:
 
         # Rotation
         rotation = transform.rotation 
-        rotation.yaw = rotation.yaw*180/3.1415 - 90
+        # rotation.yaw = rotation.yaw*180/3.1415 - 90
         state.rot = carla.Vector3D(rotation.roll, rotation.yaw, rotation.pitch)
 
         self.curr_sim.npc_states.append(state)
@@ -604,11 +605,10 @@ class rosNode:
         transform = self.carla_actor.get_transform()
 
         # Updating with current_state
-        transform.location.x = self.current_ego_state['x'] #- self.carla_offset[0]
-        transform.location.y = self.current_ego_state['y'] #- self.carla_offset[1]
+        transform.location.x = self.current_ego_state['x'] - self.carla_offset[0]
+        transform.location.y = self.current_ego_state['y'] - self.carla_offset[1]
         transform.location.y = -transform.location.y 
         transform.rotation.yaw = self.current_ego_state['psi']*180/3.1415 - 90
-        # transform.rotation.yaw *= -1
 
         # Z offset
         transform.location.z = xy2z(gomentum_mat, self.current_ego_state['x'], self.current_ego_state['y']) + 0.9

@@ -2,7 +2,7 @@
 
 #2021 Hotae Lee <hotae.lee@berkeley.edu>
 
-
+# ======================================================= Imports =======================================================
 import glob
 import os
 import sys
@@ -39,36 +39,43 @@ from std_msgs.msg import Float32
 from sensor_msgs.msg import NavSatFix
 from sensor_msgs.msg import Imu
 from scipy import io
+# ======================================================= End Imports =======================================================
 
 
+# Loading Map matrix
 map_id = 2 # 1:rfs, 2:gomentum
-gomentum_mat = io.loadmat('/home/arpae/RFS_SMPC/catkin_ws/src/mpc_carla/scripts/Road_test_Both_120821.mat')
+gomentum_mat = io.loadmat('/home/arpae/Documents/pure_sim_URAP/pure_sim_ws/src/mpclab_controllers_arpae/nodes/Gomentum_rt3003_ver1.mat')
+# gomentum_mat = io.loadmat('/home/arpae/RFS_SMPC/catkin_ws/src/mpc_carla/scripts/Road_test_Both_120821.mat')
 # gomentum_mat = io.loadmat('/home/arpae/RFS_SMPC/catkin_ws/src/carla_ros_connect/scripts/Gomentum_rt3003_ver1.mat')
 # gomentum_mat = io.loadmat('/home/arpae-msi/catkin_ws/src/carla_ros_connect/scripts/Gomentum_long_route.mat')
 # dgps_mat = io.loadmat('/home/arpae-msi/catkin_ws/src/carla_ros_connect/scripts/dgps_signal.mat')
+
+# ============================================= Translating Coordinate Functions =============================================
 def xy2z(mat, x_cur, y_cur):
     s = mat['road_s']
     z = mat['road_z']
     x = mat['road_x']
     y = mat['road_y']
 
-    norm_array = (x-x_cur)**2+(y-y_cur)**2
+    norm_array = (x - x_cur)**2 + (y - y_cur)**2
     idx_min = np.argmin(norm_array)
 
     z_cur = z.item(idx_min)
-    z_list = [z.item(idx_min-2), z.item(idx_min-1), z.item(idx_min)]
+    z_list = [z.item(idx_min - 2), z.item(idx_min - 1), z.item(idx_min)]
     return z_cur, z_list
+
 def xy2s(mat, x_cur, y_cur):
     s = mat['road_s']
     # z = mat['road_z']
     x = mat['road_x']
     y = mat['road_y']
 
-    norm_array = (x-x_cur)**2+(y-y_cur)**2
+    norm_array = (x - x_cur)**2 + (y - y_cur)**2
     idx_min = np.argmin(norm_array)
 
     s_cur = s.item(idx_min)
     return s_cur
+
 def latlon_to_XY(lat0, lon0, lat1, lon1):
     ''' 
     Convert latitude and longitude to global X, Y coordinates,
@@ -87,7 +94,13 @@ def latlon_to_XY(lat0, lon0, lat1, lon1):
     Y = R_earth * delta_lat
 
     return X,Y
+# ============================================= End Translating Coordinate Functions =============================================
 
+
+# ======================================== Carla Camera Sensor Functions ========================================
+"""
+Processes the data a camera object collects when attached to Carla Actor
+"""
 def process_img(image, x_size, y_size, num):
     i = np.array(image.raw_data)
     # print(i.shape)
@@ -102,6 +115,8 @@ def process_img(image, x_size, y_size, num):
     # cv2.imshow("{}".format(num),i_resize)
     cv2.waitKey(1)
     return i3/255.0
+# ======================================== End Carla Camera Sensor Functions ========================================
+
 
 def detect_handler(event):
     actor_we_collide_against = event.other_actor
@@ -109,6 +124,8 @@ def detect_handler(event):
     # impulse = event.normal_impulse
     # intensity = math.sqrt(impulse.x**2 + impulse.y**2 + impulse.z**2)
 
+
+# ============================================ Receive Vehicle State ============================================
 # Class to recieve the vehicle's actual state
 class VehicleState():
     def __init__(self):        
@@ -125,10 +142,11 @@ class VehicleState():
         # 3) For pure-simulation
         rospy.Subscriber("est_state_ros1", StateEst, self.state2carla) 
 
-        self.current_state = {'t':0, 'x':100, 'y':0, 'psi':12,'lat':0, 'lon':0, 'alt':10, 'v_lon': 10}
+        self.current_state = {'t':0, 'x':0, 'y':0, 'psi':12,'lat':0, 'lon':0, 'alt':-30, 'v_lon': 10}
         self.state_traj = []
         self.check = 0
         # rospy.spin()
+
     def callback(self, msg): 
         rospy.loginfo(rospy.get_caller_id() + "x and time are %s %s", msg.x, msg.header.stamp.secs + 1e-9 * msg.header.stamp.nsecs)   
         self.current_state['t'] = msg.header.stamp.secs + 1e-9 * msg.header.stamp.nsecs
@@ -141,6 +159,7 @@ class VehicleState():
         # to specify when subscriber starts (need offset depending on the map)
         if self.check == 0:
             self.check = 1
+
     def gps2state(self, msg):
         # rospy.loginfo(rospy.get_caller_id() + "x and time are %s %s", msg.x, msg.header.stamp.secs + 1e-9 * msg.header.stamp.nsecs)   
         self.current_state['t'] = msg.header.stamp.secs + 1e-9 * msg.header.stamp.nsecs
@@ -164,6 +183,7 @@ class VehicleState():
         # print('x,y {} {}'.format(self.current_state['x'], self.current_state['y']))
         if self.check == 0:
             self.check = 1
+
     def imu2state(self,msg):
         # Get yaw angle from quaternion representation.
         ori = msg.orientation
@@ -174,8 +194,10 @@ class VehicleState():
         psi = yaw + 0.5 * m.pi
         psi = (psi + np.pi) % (2. * np.pi) - np.pi # wrap within [-pi, pi]
         self.current_state['psi'] = psi # yaw (rad), measured counterclockwise from E (global x-axis).
+
     def heading2state(self, msg):
-        self.current_state['psi'] = -msg.data+0.5*m.pi   
+        self.current_state['psi'] = -msg.data+0.5*m.pi 
+
     def state2carla(self, msg):
         self.current_state['x'] = msg.x
         self.current_state['y'] = msg.y
@@ -184,9 +206,10 @@ class VehicleState():
         self.current_state['psi'] = psi
         self.current_state['v_lon'] = msg.v_long
     
+# ================================================ End Vehicle State ================================================
 
 
-
+# ================================================ Get Traffic State ================================================
 class TrafficStates():
     def __init__(self):
         # From actual traffic light (throught cohda)
@@ -202,8 +225,10 @@ class TrafficStates():
         self.cohda_state['stop_bar_distance'] = msg.stop_bar_distance
         self.cohda_state['time_r'] = msg.time_r
         self.cohda_state['tl_state'] = msg.tl_state
+# ================================================ End Traffic State ================================================
 
 
+# ================================================ Main ================================================
 def main():
     # num_loc1 = 0   # Delta street
     # num_loc2 = 0  # Fire House
@@ -214,7 +239,7 @@ def main():
     num_loc3 = 7   # before hard curve
     num_loc4 = 10   # Pearl ave
     # num_npcs = num_loc1 + num_loc2 + num_loc3 + num_loc4 
-    num_npcs=2
+    num_npcs = 200
 
     npc_status = True # if False, we don't use NPC
     car_lights_on = False
@@ -247,7 +272,7 @@ def main():
         # Traffic Manager is created
         traffic_manager = client.get_trafficmanager(8000)
         traffic_manager.set_global_distance_to_leading_vehicle(1.5)
-        traffic_manager.global_percentage_speed_difference(30.0) # speed limit can be exceeded by -30% (percent is applied in a negative way)
+        traffic_manager.global_percentage_speed_difference(10.0) # speed limit can be exceeded by -xx% (percent is applied in a negative way)
         # traffic_manager.set_synchronous_mode(False)
 
         # Get blueprints for adding new actors into the simulation.
@@ -258,6 +283,8 @@ def main():
         # tls = world.get_actors().filter('traffic.traffic_light*')
         # grp = tls[0].get_group_traffic_lights()
         # print("grp, tls: {}, {}".format(grp, tls))
+
+        # Spawn NPC vehicles
         if npc_status:
             '''
             ----------------
@@ -266,15 +293,15 @@ def main():
             '''
             # spawn_points = world.get_map().get_spawn_points()
 
-            # force to increase the number of spawn points
+            # # force to increase the number of spawn points
             # for k in range(num_npcs-len(spawn_points)):
-                # tf = random.choice(world.get_map().get_spawn_points())        
-                # # Fix the x,y,z position to check where it spawns
-                # tf.location.x += 2*k
-                # tf.location.y += 4*k         
-                # spawn_points.append(tf)
+            #     tf = random.choice(world.get_map().get_spawn_points())        
+            #     # Fix the x,y,z position to check where it spawns
+            #     tf.location.x += 2*k
+            #     tf.location.y += 4*k         
+            #     spawn_points.append(tf)
 
-            # force to fix spawn points aronnd the origin(parking lot)
+            # force to fix spawn points around the origin(parking lot)
             spawn_points = []
             for k in range(num_npcs):
                 tf = random.choice(world.get_map().get_spawn_points())  
@@ -333,8 +360,8 @@ def main():
 
             if num_npcs <= number_of_spawn_points:
                 random.shuffle(spawn_points)
-            elif num_npcs > number_of_spawn_points:
-                num_npcs = number_of_spawn_points
+            # elif num_npcs > number_of_spawn_points:
+            #     num_npcs = number_of_spawn_points
 
             # @todo cannot import these directly.
             SpawnActor = carla.command.SpawnActor
@@ -391,7 +418,6 @@ def main():
         pub = rospy.Publisher('carla/npc_state_array', NpcStateArray, queue_size = 10)        
         pub_traffic = rospy.Publisher('carla/spats', SPaTArray, queue_size = 10)
         rate = rospy.Rate(50)
-        # while not rospy.is_shutdown():
 
 
         # --------------------
@@ -426,9 +452,9 @@ def main():
             transform.rotation.pitch = 0
             transform.rotation.roll = 0
         elif map_id == 2:
-            transform.location.x = 0
-            transform.location.y = 0
-            transform.location.z = 30
+            transform.location.x = 136.468244438
+            transform.location.y = -118.663684215
+            transform.location.z = 17.75
             transform.rotation.yaw = 40
             transform.rotation.pitch = 0
             transform.rotation.roll = 0
@@ -445,6 +471,8 @@ def main():
         # Can set autopilot
         # vehicle.set_autopilot(True)
 
+        # ===== Carla Camera on Ego Vehicle ===== 
+        """
         # We can add a camera attached to the vehicle.
         camera_bp = blueprint_library.find('sensor.camera.rgb')
         camera_transform = carla.Transform(carla.Location(x=1.6, z=1.1))
@@ -488,15 +516,16 @@ def main():
         # camera.listen(lambda image: image.save_to_disk('FPS_out/%06d.png' % image.frame, cc))
         camera.listen(lambda image: process_img(image, camera_bp.get_attribute('image_size_x').as_int(), camera_bp.get_attribute('image_size_y').as_int(),1))
         # camera1.listen(lambda image: process_img(image, camera_bp1.get_attribute('image_size_x').as_int(), camera_bp1.get_attribute('image_size_y').as_int(),2))
-
+        """
+        # ===== End Carla Camera =====
         # import pdb; pdb.set_trace()
 
-
+        """
         # Collision detector
         detector_bp = blueprint_library.find('sensor.other.collision')
         detector = world.spawn_actor(detector_bp, carla.Transform(), attach_to=vehicle)
         detector.listen(lambda event: detect_handler(event))
-
+        """
 
         # Get a map to check geolocation
         cur_map = world.get_map()
@@ -508,8 +537,8 @@ def main():
         check_loc.y = 0
         check_loc.z = 0
         origin_gps = cur_map.transform_to_geolocation(check_loc)
-        print('origin... lat, long, alt : {}, {}, {}'.format(origin_gps.latitude, origin_gps.longitude, origin_gps.altitude))
-        print("\n")
+        # print('origin... lat, long, alt : {}, {}, {}'.format(origin_gps.latitude, origin_gps.longitude, origin_gps.altitude))
+        # print("\n")
         lat_o = origin_gps.latitude
         lon_o = origin_gps.longitude
         if map_id == 1:
@@ -523,8 +552,8 @@ def main():
         offset_x, offset_y = latlon_to_XY(LAT0, LON0, lat_o, lon_o)
 
         # we will use offset like this : state - offset
-        print('offset x, y : {}, {}'.format(offset_x, offset_y))
-        print("\n")
+        # print('offset x, y : {}, {}'.format(offset_x, offset_y))
+        # print("\n")
         # pdb.set_trace()
 
         world.set_weather(carla.WeatherParameters.ClearSunset)
@@ -541,8 +570,8 @@ def main():
             Obtain ego's CARLA Coordinates (xego_cur, yego_cur)
             '''            
             # current_state : coordinate of real GPS referred to REF GPS / offset : RFS GPS's coordinate from carla origin
-            xego_cur = state.current_state['x']-offset_x 
-            yego_cur = state.current_state['y']-offset_y
+            xego_cur = state.current_state['x'] - offset_x 
+            yego_cur = state.current_state['y'] - offset_y
             yego_cur = -yego_cur 
             npc_state_list = []
 
@@ -561,7 +590,7 @@ def main():
                 if (transform_temp.location.x - xego_cur)**2 + (transform_temp.location.y - yego_cur)**2 >= DIST_MEASURE**2:                        
                     pass
                 else:
-                    print(transform_temp, velocity_temp)
+                    # print(transform_temp, velocity_temp)
                     # print("gap current 150: {}".format(np.sqrt((transform_temp.location.x - xego_cur)**2 + (transform_temp.location.y - yego_cur)**2 )))
                     
                     # Populate msg for npc state
@@ -666,7 +695,7 @@ def main():
             # 0. Sort out traffic lights in order (MAYBE USE s coordinate, assign a traffic light to each s)
             # If ego vehicle is at traffic light or not
             if vehicle.is_at_traffic_light():
-                print("ego is affected by a traffi light")
+                print("ego is affected by a traffic light")
                 tl_cur = vehicle.get_traffic_light()
             else:
                 print("A traffic light is far away from ego")
@@ -676,7 +705,7 @@ def main():
             ego_s = xy2s(gomentum_mat, state.current_state['x'], state.current_state['y'])
             tl_info_list = []
             tl_ours_list = []
-            print("tl_list, num: {}, {}".format(tl_list, len(tl_list)))
+            # print("tl_list, num: {}, {}".format(tl_list, len(tl_list)))
             for tl in tl_list:
                 tl_loc = tl.get_location()
                 tl_s = xy2s(gomentum_mat, tl_loc.x + offset_x, -(tl_loc.y - offset_y))
@@ -696,7 +725,7 @@ def main():
 
                 tl_info = {'s': tl_s, 'id':tl.id, 'tl':tl, 'x': tl_loc.x}
                 tl_info_list.append(tl_info)
-                print("tl:{}, tl loc:{}, tl_loc_s:{}".format(tl, tl_loc, tl_s))
+                # print("tl:{}, tl loc:{}, tl_loc_s:{}".format(tl, tl_loc, tl_s))
 
                 # Pick traffic lights along our path
                 if int(tl_loc.x) in [-113,-240,-155,19,209,140]:
@@ -767,10 +796,10 @@ def main():
                     
                 # Find a next traffic light by comparing 's'
                 tl_next_idx = 0
-                print("tl_ours_sorted {}".format(tl_ours_sorted))
+                # print("tl_ours_sorted {}".format(tl_ours_sorted))
                 for tl_info in tl_ours_sorted:
-                    print("tl_next{}, len{}".format(tl_next_idx,len(tl_ours_sorted)))
-                    print("egos, tl s: {},{}".format(ego_s, tl_info['s']))
+                    # print("tl_next{}, len{}".format(tl_next_idx,len(tl_ours_sorted)))
+                    # print("egos, tl s: {},{}".format(ego_s, tl_info['s']))
                     if ego_s > 1100:
                         ego_s =- 1316.4
 
@@ -799,7 +828,7 @@ def main():
                 else:
                     pair_bool = False
                     tl_p = None
-                print("tl_p, type {}, {}".format(tl_p, type(tl_p)))
+                # print("tl_p, type {}, {}".format(tl_p, type(tl_p)))
                 # 1. Get the carla type data 
                 """Traffic Lights
                     i) If there is no pair of traffic light (only 1 tl)
@@ -816,7 +845,7 @@ def main():
                     time_r = tl.get_red_time()
                     signal_timing = tl.get_green_time() - tl.get_elapsed_time()
                     signal_phase =  tl.get_state() 
-                    print("single tl {}'s state:{}, remaining time: {}".format(tl.get_location(),signal_phase,signal_timing))
+                    # print("single tl {}'s state:{}, remaining time: {}".format(tl.get_location(),signal_phase,signal_timing))
                 else:
                     # ii)
                     # tl.set_state(carla.TrafficLightState.Green)
@@ -865,8 +894,8 @@ def main():
                                 # tl: Red & Frozen (p:Red)
                                 signal_timing = tl_p.get_green_time() - tl_p.get_elapsed_time() 
 
-                    print("pair1 tl {}'s state:{}, remaining time: {}".format(tl.get_location(),signal_phase,signal_timing))
-                    print("pair2 tl_p {}'s state:{}, elapsed_sec, p elapsed_sec: {},{}".format(tl_p.get_location(),tl_p.get_state(), tl.get_elapsed_time(), tl_p.get_elapsed_time()))
+                    # print("pair1 tl {}'s state:{}, remaining time: {}".format(tl.get_location(),signal_phase,signal_timing))
+                    # print("pair2 tl_p {}'s state:{}, elapsed_sec, p elapsed_sec: {},{}".format(tl_p.get_location(),tl_p.get_state(), tl.get_elapsed_time(), tl_p.get_elapsed_time()))
                     
                     # CARLA SPaT's list (hope spats of traffic light from closest to farthest)
                     # for tl in world.get_actors().filter('traffic.traffic_light*'):
@@ -943,7 +972,7 @@ def main():
                         # tl.set_yellow_time(real_traffic.cohda_state['signal_timing'])
                         signal_timing = real_traffic.cohda_state['signal_timing']
                     else:
-                        print("signle & no cohda yet single")
+                        print("single & no cohda yet single")
                 else:
                     # DOUBLE TLs
                     # time_gap = real_traffic.cohda_state['signal_timing'] - signal_timing # real - virtual
@@ -1125,16 +1154,16 @@ def main():
                         1) z offset
                         2) x,y offset
                     """
-                    z_offset_on = 3        # 1: map, 2: cur gps, 3: no offset (keep tran.z)
+                    z_offset_on = 1        # 1: map, 2: cur gps, 3: no offset (keep tran.z)
                     xy_offset_on = 2   # 1: on, 2: off   
                     if map_id == 2:
                         # 1) Gomentum z coordinate offset compensation
                         if z_offset_on == 1:
                             # From recorded map
                             z_cur, z_list = xy2z(gomentum_mat, trans.location.x+offset_x, -trans.location.y+offset_y)
-                            trans.location.z = z_cur+1.5
+                            trans.location.z = z_cur+1.25
                             s_cur = xy2s(gomentum_mat, trans.location.x+offset_x, -trans.location.y+offset_y)
-                            print("s_cur : {}".format(s_cur))
+                            # print("s_cur : {}".format(s_cur))
                         elif z_offset_on == 2:
                             # From current state['alt']
                             trans.location.z = state.current_state['alt']+1.0
@@ -1223,7 +1252,7 @@ def main():
                         else:
                             dgps_comp_offset_x = 0
                             dgps_comp_offset_y = 0
-                    trans.location.z = 20.12
+                            
                     trans.rotation.pitch = 0
                     trans.rotation.roll = 0
 
